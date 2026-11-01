@@ -1,0 +1,24 @@
+[Unit]
+Description=ClockIn API (Express + Prisma)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=clockin
+Group=clockin
+WorkingDirectory=/opt/clockin/server
+Environment=NODE_ENV=production
+EnvironmentFile=/opt/clockin/server/.env
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/clockin/server/uploads
+# Jika memakai S3, ReadWritePaths untuk uploads dapat dihapus.
+
+[Install]
+WantedBy=multi-user.target

@@ -32,6 +32,14 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
+.env.production
+server/.env.production
+admin/.env.production
+!.env.example
+
+# agent/tooling lokal
+.commandcode/
 
 # typescript
 *.tsbuildinfo
@@ -41,3 +49,17 @@ example
 # generated native folders
 /ios
 /android
+
+# server
+server/node_modules/
+server/.env
+server/uploads/
+server/src/generated/
+server/coverage/
+
+# admin
+admin/node_modules/
+admin/dist/
+admin/.env
+admin/.env.local
+

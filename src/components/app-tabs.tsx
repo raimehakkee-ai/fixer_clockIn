@@ -11,20 +11,34 @@ export default function AppTabs() {
     <NativeTabs
       backgroundColor={colors.background}
       indicatorColor={colors.backgroundElement}
+      tintColor={colors.primary}
       labelStyle={{ selected: { color: colors.text } }}>
       <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Absen</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/home.png')}
-          renderingMode="template"
+          sf={{ default: 'clock', selected: 'clock.fill' }}
+          md="schedule"
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
+      <NativeTabs.Trigger name="history">
+        <NativeTabs.Trigger.Label>Riwayat</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="list.bullet.rectangle" md="history" />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="leave">
+        <NativeTabs.Trigger.Label>Izin</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
+          sf={{ default: 'calendar', selected: 'calendar.badge.clock' }}
+          md="event_note"
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="profile">
+        <NativeTabs.Trigger.Label>Profil</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }}
+          md="person"
         />
       </NativeTabs.Trigger>
     </NativeTabs>

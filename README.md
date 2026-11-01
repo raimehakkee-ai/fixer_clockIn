@@ -1,56 +1,132 @@
-# Welcome to your Expo app 👋
+# ClockIn — Aplikasi Absensi Perusahaan
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplikasi absensi karyawan dengan validasi lokasi (geofencing), waktu server,
+selfie kamera, deteksi mock location, serta dashboard Admin/HRD.
 
-## Get started
+## Fitur
 
-1. Install dependencies
+- **Mobile (Expo/React Native)**: login dengan pengikatan perangkat, pemilihan shift, Clock-In/Out dengan GPS + selfie, riwayat kehadiran, pengajuan izin/cuti, profil.
+- **API (Express + Prisma + PostgreSQL)**: autentikasi JWT, absensi server-side (Haversine, akurasi, mock location), izin/cuti, CRUD karyawan/lokasi/shift, audit log.
+- **Web Admin (Vite + React + Tailwind)**: dashboard kehadiran, monitoring + foto/koordinat, approval izin, pengelolaan karyawan/lokasi/shift, ekspor CSV/XLSX, dan audit log.
 
-   ```bash
-   npm install
-   ```
+## Struktur
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+├── src/        Aplikasi Expo karyawan
+├── server/     API Express + Prisma + PostgreSQL
+├── admin/      Web Admin React + Tailwind
+├── docs/       PRD, arsitektur, database, API, keamanan, test plan, keputusan
+└── shared/     (dicadangkan untuk kontrak tipe lintas proyek)
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+## Prasyarat
 
-### Other setup steps
+- Node.js 22.12+
+- PostgreSQL 14+ **atau** Prisma local Postgres (`npx prisma dev`, tanpa Docker)
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Menjalankan
 
-## Learn more
+```bash
+# 1. Backend
+cd server
+npm install
+cp .env.example .env        # sesuaikan DATABASE_URL & JWT_ACCESS_SECRET
+npx prisma dev --detach     # salin URL TCP ke DATABASE_URL
+npx prisma migrate deploy
+npm run db:seed
+npm run dev                 # http://localhost:4000/api/v1
 
-To learn more about developing your project with Expo, look at the following resources:
+# 2. Aplikasi mobile (terminal lain)
+cd ..
+cp .env.example .env        # EXPO_PUBLIC_API_URL=http://localhost:4000
+npx expo start              # a / i / w
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+# 3. Web Admin (terminal lain)
+cd admin
+npm install
+npm run dev                 # http://localhost:5173
+```
 
-## Join the community
+Detail backend: [`server/README.md`](./server/README.md)
+Detail mobile: [`docs/MOBILE.md`](./docs/MOBILE.md)
+Detail admin: [`docs/ADMIN.md`](./docs/ADMIN.md)
 
-Join our community of developers creating universal apps.
+## Akun Demo (development)
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+| Peran | Email | Password |
+| :--- | :--- | :--- |
+| Admin | `admin@clockin.test` | `Admin123!` |
+| Karyawan | `budi@clockin.test` | `Employee123!` |
+| Karyawan | `siti@clockin.test` | `Employee123!` |
+| Karyawan | `andi@clockin.test` | `Employee123!` |
+
+## Pengujian
+
+```bash
+# Mobile
+npm run typecheck
+npm run lint
+
+# Backend (server harus berjalan)
+cd server
+npm test          # 81 unit test
+npm run smoke     # 149 pemeriksaan integrasi (auth, admin, absensi, izin, laporan)
+npm run smoke:security  # 41 pemeriksaan keamanan (jalankan pada server baru di-restart)
+
+# Web Admin
+cd ../admin
+npm run build     # typecheck + vite build
+```
+
+Hasil terakhir: typecheck mobile & admin lulus, lint lulus, `expo-doctor` 20/20,
+export web mobile berhasil, build admin berhasil, 81 unit test + 149 smoke test +
+41 security check lulus, audit dependensi server/admin 0 kerentanan,
+production smoke (simulasi lokal) 13/13 lulus.
+
+## Deployment
+
+Panduan lengkap: [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md).
+
+Simulasi produksi lokal:
+
+```bash
+npm run admin:build
+node infra/scripts/serve-static.mjs   # terminal 1 — http://localhost:8080
+npm run production:smoke              # terminal 2
+```
+
+## Dokumentasi
+
+- [docs/README.md](./docs/README.md) — indeks dokumen
+- [docs/PRD.md](./docs/PRD.md) — kebutuhan produk & aturan bisnis
+- [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) — arsitektur & alur
+- [docs/DATABASE.md](./docs/DATABASE.md) — skema & migrasi
+- [docs/API.md](./docs/API.md) — kontrak `/api/v1`
+- [docs/SECURITY.md](./docs/SECURITY.md) — keamanan & privasi
+- [docs/SECURITY_AUDIT.md](./docs/SECURITY_AUDIT.md) — hasil audit & penguatan Fase 7
+- [docs/BACKUP.md](./docs/BACKUP.md) — prosedur backup/restore (belum diuji di lingkungan ini)
+- [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) — panduan deployment VPS/Nginx/TLS & simulasi lokal
+- [docs/TEST_PLAN.md](./docs/TEST_PLAN.md) — rencana pengujian
+- [docs/DECISIONS.md](./docs/DECISIONS.md) — catatan keputusan
+- [docs/MOBILE.md](./docs/MOBILE.md) — panduan aplikasi mobile
+- [docs/ADMIN.md](./docs/ADMIN.md) — panduan Web Admin
+- [docs/HANDOVER.md](./docs/HANDOVER.md) — paket serah terima & status kesiapan
+- [docs/USER_GUIDE_EMPLOYEE.md](./docs/USER_GUIDE_EMPLOYEE.md) — panduan karyawan
+- [docs/USER_GUIDE_ADMIN.md](./docs/USER_GUIDE_ADMIN.md) — panduan Admin/HRD
+- [docs/RUNBOOK.md](./docs/RUNBOOK.md) — runbook operasional
+- [docs/REQUIREMENTS_TRACEABILITY.md](./docs/REQUIREMENTS_TRACEABILITY.md) — traceability kebutuhan
+
+## Status
+
+Fase 0–9 selesai: backend, mobile, Web Admin, pengujian/keamanan, simulasi deployment, dan paket serah terima.
+Status rilis: **Release Candidate** — sign-off dan item P1 (uji perangkat, VPS/TLS, restore backup) belum dilakukan.
+
+## Keterbatasan yang Diakui
+
+- Deteksi mock location bergantung platform dan tidak tersedia di web.
+- Selfie bukan verifikasi biometrik.
+- Perangkat Android/iOS nyata belum diuji di lingkungan pengembangan ini.
+- UI mobile dan Web Admin belum diuji visual di browser (tidak ada browser pada lingkungan ini); bundling/typecheck sudah divalidasi.
+- Web Admin memakai `localStorage` untuk token; CSP wajib di produksi.
+- Backup/restore belum diuji (lihat `docs/BACKUP.md`); `npm audit` root masih 13 moderate dari toolchain Expo.
+- 13 advisory moderate Expo belum diperbaiki karena perbaikannya berupa perubahan major/downgrade.

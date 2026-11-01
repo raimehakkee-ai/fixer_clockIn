@@ -1,0 +1,253 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  EMPLOYEE
+  ADMIN
+
+  @@map("user_role")
+}
+
+enum DeviceStatus {
+  ACTIVE
+  REVOKED
+
+  @@map("device_status")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  INCOMPLETE
+
+  @@map("attendance_status")
+}
+
+enum LeaveType {
+  SICK
+  ANNUAL
+  PERMISSION
+  OTHER
+
+  @@map("leave_type")
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+
+  @@map("leave_status")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  role         UserRole
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  employee       Employee?
+  sessions       Session[]
+  reviewedLeaves LeaveRequest[] @relation("LeaveReviewer")
+  auditLogs      AuditLog[]     @relation("AuditActor")
+  revokedDevices Device[]       @relation("DeviceRevoker")
+
+  @@map("users")
+}
+
+model Employee {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @unique @map("user_id") @db.Uuid
+  employeeNumber   String   @unique @map("employee_number") @db.VarChar(50)
+  fullName         String   @map("full_name") @db.VarChar(150)
+  department       String?  @db.VarChar(100)
+  position         String?  @db.VarChar(100)
+  officeLocationId String?  @map("office_location_id") @db.Uuid
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user           User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  officeLocation OfficeLocation? @relation(fields: [officeLocationId], references: [id], onDelete: Restrict)
+  devices        Device[]
+  attendances    AttendanceRecord[]
+  leaveRequests  LeaveRequest[]
+
+  @@index([isActive])
+  @@index([officeLocationId])
+  @@map("employees")
+}
+
+model Device {
+  id               String       @id @default(uuid()) @db.Uuid
+  employeeId       String       @map("employee_id") @db.Uuid
+  deviceIdentifier String       @map("device_identifier") @db.VarChar(128)
+  platform         String       @db.VarChar(20)
+  deviceName       String?      @map("device_name") @db.VarChar(150)
+  status           DeviceStatus @default(ACTIVE)
+  registeredAt     DateTime     @default(now()) @map("registered_at") @db.Timestamptz(3)
+  lastSeenAt       DateTime?    @map("last_seen_at") @db.Timestamptz(3)
+  revokedAt        DateTime?    @map("revoked_at") @db.Timestamptz(3)
+  revokedById      String?      @map("revoked_by") @db.Uuid
+
+  employee  Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  revokedBy User?     @relation("DeviceRevoker", fields: [revokedById], references: [id], onDelete: SetNull)
+  sessions  Session[]
+
+  @@unique([employeeId, deviceIdentifier])
+  @@index([employeeId, status])
+  @@map("devices")
+}
+
+model Session {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  deviceId         String?   @map("device_id") @db.Uuid
+  refreshTokenHash String    @unique @map("refresh_token_hash") @db.VarChar(255)
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(3)
+  lastUsedAt       DateTime  @default(now()) @map("last_used_at") @db.Timestamptz(3)
+  ipAddress        String?   @map("ip_address") @db.VarChar(45)
+  userAgent        String?   @map("user_agent") @db.VarChar(255)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device Device? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model OfficeLocation {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(150)
+  latitude     Decimal  @db.Decimal(9, 6)
+  longitude    Decimal  @db.Decimal(9, 6)
+  radiusMeters Int      @default(50) @map("radius_meters")
+  timezone     String   @default("Asia/Jakarta") @db.VarChar(64)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  employees   Employee[]
+  attendances AttendanceRecord[]
+
+  @@map("office_locations")
+}
+
+model Shift {
+  id                 String   @id @default(uuid()) @db.Uuid
+  name               String   @unique @db.VarChar(50)
+  startTime          String   @map("start_time") @db.VarChar(5)
+  endTime            String   @map("end_time") @db.VarChar(5)
+  crossesMidnight    Boolean  @map("crosses_midnight")
+  toleranceMinutes   Int      @default(15) @map("tolerance_minutes")
+  earlyWindowMinutes Int      @default(120) @map("early_window_minutes")
+  isActive           Boolean  @default(true) @map("is_active")
+  sortOrder          Int      @default(0) @map("sort_order")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  attendances AttendanceRecord[]
+
+  @@index([isActive, sortOrder])
+  @@map("shifts")
+}
+
+model AttendanceRecord {
+  id                    String           @id @default(uuid()) @db.Uuid
+  employeeId            String           @map("employee_id") @db.Uuid
+  officeLocationId      String           @map("office_location_id") @db.Uuid
+  shiftId               String           @map("shift_id") @db.Uuid
+  workDate              DateTime         @map("work_date") @db.Date
+  clockInAt             DateTime         @map("clock_in_at") @db.Timestamptz(3)
+  clockInLatitude       Decimal          @map("clock_in_latitude") @db.Decimal(9, 6)
+  clockInLongitude      Decimal          @map("clock_in_longitude") @db.Decimal(9, 6)
+  clockInAccuracy       Float            @map("clock_in_accuracy")
+  clockInDistanceMeters Float            @map("clock_in_distance_meters")
+  clockInMocked         Boolean          @default(false) @map("clock_in_mocked")
+  clockInPhotoKey       String           @map("clock_in_photo_key") @db.VarChar(255)
+  clockInPhotoMime      String           @map("clock_in_photo_mime") @db.VarChar(50)
+  clockInIp             String?          @map("clock_in_ip") @db.VarChar(45)
+  clockOutAt            DateTime?        @map("clock_out_at") @db.Timestamptz(3)
+  clockOutLatitude      Decimal?         @map("clock_out_latitude") @db.Decimal(9, 6)
+  clockOutLongitude     Decimal?         @map("clock_out_longitude") @db.Decimal(9, 6)
+  clockOutAccuracy      Float?           @map("clock_out_accuracy")
+  clockOutDistanceMeters Float?          @map("clock_out_distance_meters")
+  clockOutMocked        Boolean?         @map("clock_out_mocked")
+  clockOutPhotoKey      String?          @map("clock_out_photo_key") @db.VarChar(255)
+  clockOutPhotoMime     String?          @map("clock_out_photo_mime") @db.VarChar(50)
+  clockOutIp            String?          @map("clock_out_ip") @db.VarChar(45)
+  status                AttendanceStatus
+  lateMinutes           Int              @default(0) @map("late_minutes")
+  earlyLeaveMinutes     Int              @default(0) @map("early_leave_minutes")
+  riskFlags             Json             @default("[]") @map("risk_flags")
+  createdAt             DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  employee       Employee       @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  officeLocation OfficeLocation @relation(fields: [officeLocationId], references: [id], onDelete: Restrict)
+  shift          Shift          @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+
+  @@unique([employeeId, workDate, shiftId])
+  @@index([officeLocationId, workDate])
+  @@index([workDate, status])
+  @@index([employeeId, workDate])
+  @@index([shiftId])
+  @@map("attendance_records")
+}
+
+model LeaveRequest {
+  id             String      @id @default(uuid()) @db.Uuid
+  employeeId     String      @map("employee_id") @db.Uuid
+  type           LeaveType
+  startDate      DateTime    @map("start_date") @db.Date
+  endDate        DateTime    @map("end_date") @db.Date
+  reason         String      @db.Text
+  attachmentKey  String?     @map("attachment_key") @db.VarChar(255)
+  attachmentMime String?     @map("attachment_mime") @db.VarChar(50)
+  status         LeaveStatus @default(PENDING)
+  reviewedById   String?     @map("reviewed_by") @db.Uuid
+  reviewedAt     DateTime?   @map("reviewed_at") @db.Timestamptz(3)
+  reviewNote     String?     @map("review_note") @db.Text
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  reviewedBy User?    @relation("LeaveReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([employeeId, startDate])
+  @@index([startDate, endDate])
+  @@map("leave_requests")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  actorUserId String?  @map("actor_user_id") @db.Uuid
+  action      String   @db.VarChar(64)
+  entityType  String   @map("entity_type") @db.VarChar(64)
+  entityId    String?  @map("entity_id") @db.Uuid
+  metadata    Json     @default("{}")
+  ipAddress   String?  @map("ip_address") @db.VarChar(45)
+  userAgent   String?  @map("user_agent") @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  actor User? @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([actorUserId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
