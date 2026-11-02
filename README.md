@@ -89,6 +89,10 @@ backend + 151 smoke test + 41 security check lulus, audit dependensi server/admi
 
 Panduan lengkap: [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md).
 
+Staging/UAT memakai database, service, domain, dan Admin terpisah. Seed demo
+ditolak di staging; gunakan `npm run staging:bootstrap` lalu
+`npm run admin:create` (lihat bagian 11 dokumen deployment).
+
 Simulasi produksi lokal:
 
 ```bash

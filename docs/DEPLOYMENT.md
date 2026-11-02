@@ -227,7 +227,60 @@ Lihat laporan Fase 8 untuk angka aktual.
 
 ---
 
-## 11. Checklist Go-Live
+## 11. Staging / UAT
+
+Staging menggunakan database, service, domain, dan Admin terpisah dari produksi.
+Seed demo **tidak boleh** dipakai di staging.
+
+```bash
+# 1. Database PostgreSQL staging
+sudo -u postgres psql -c "CREATE USER clockin_staging WITH PASSWORD 'GANTI'"
+sudo -u postgres createdb -O clockin_staging clockin_staging
+
+# 2. Deploy kode
+sudo rsync -a --exclude node_modules --exclude .git \
+  /path/to/fixer_clockIn/ /opt/clockin-staging/
+cd /opt/clockin-staging/server
+cp .env.staging.example .env.staging
+chmod 600 .env.staging
+
+# 3. Dependensi & migrasi
+npm ci
+set -a; source .env.staging; set +a
+npx prisma generate
+npx prisma migrate deploy
+
+# 4. Bootstrap kantor + shift, tanpa akun demo
+npm run staging:bootstrap
+
+# 5. Admin staging (password acak, simpan di tempat aman)
+npm run admin:create -- admin@staging.perusahaan.com 'PasswordKuat123!'
+
+# 6. Build static dan arahkan Nginx ke /var/www/clockin-staging
+cd /path/to/fixer_clockIn
+EXPO_PUBLIC_API_URL=/ npx expo export --platform web
+sudo rsync -a --delete dist/ /var/www/clockin-staging/mobile/
+cd admin && npm run build
+sudo rsync -a --delete dist/ /var/www/clockin-staging/admin/
+```
+
+- Service: `infra/systemd/clockin-api-staging.service` (port API `4100`).
+- Nginx: `infra/nginx/clockin-staging.conf`, domain staging masing-masing.
+- `npm run db:seed` akan menolak berjalan jika `NODE_ENV` bukan `development`
+  dan `ALLOW_DEMO_SEED` bukan `true`.
+- Isi staging tetap kosong dari karyawan demo; Admin membuat akun UAT melalui
+  menu **Karyawan** atau API Admin.
+
+Verifikasi minimal:
+
+```bash
+curl -s https://staging-clockin.example.com/api/v1/health
+curl -sI https://staging-clockin-admin.example.com/
+```
+
+---
+
+## 12. Checklist Go-Live
 
 - [ ] DNS mengarah ke server, TLS valid.
 - [ ] `.env.production` permission 600, secret acak, CORS produksi.

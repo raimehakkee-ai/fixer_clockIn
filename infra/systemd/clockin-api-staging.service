@@ -1,0 +1,23 @@
+[Unit]
+Description=ClockIn API Staging (Express + Prisma)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=clockin
+Group=clockin
+WorkingDirectory=/opt/clockin-staging/server
+Environment=NODE_ENV=production
+EnvironmentFile=/opt/clockin-staging/server/.env.staging
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/clockin-staging/server/uploads
+
+[Install]
+WantedBy=multi-user.target

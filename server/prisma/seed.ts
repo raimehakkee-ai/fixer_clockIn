@@ -2,10 +2,14 @@ import { prisma } from '../src/db';
 import { hashPassword } from '../src/lib/password';
 import { crossesMidnight } from '../src/lib/time';
 
-if (process.env.NODE_ENV === 'production') {
+if (
+  process.env.NODE_ENV !== 'development' &&
+  process.env.ALLOW_DEMO_SEED !== 'true'
+) {
   console.error(
-    'Seed demo tidak boleh dijalankan pada NODE_ENV=production. ' +
-      'Gunakan `npm run admin:create` untuk membuat Admin produksi.',
+    'Seed demo hanya boleh dijalankan pada NODE_ENV=development ' +
+      'atau dengan ALLOW_DEMO_SEED=true. Untuk staging/produksi gunakan ' +
+      '`npm run staging:bootstrap` dan `npm run admin:create`.',
   );
   process.exit(1);
 }
