@@ -10,6 +10,7 @@ import {
   ErrorNotice,
   Loading,
   Modal,
+  Notice,
   PageHeader,
   Pagination,
 } from '@/components/ui';
@@ -55,6 +56,12 @@ export function LeavePage() {
   const [note, setNote] = useState('');
   const [modalError, setModalError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [noticeTone, setNoticeTone] = useState<'success' | 'error'>('success');
+
+  const showNotice = (message: string, tone: 'success' | 'error' = 'success') => {
+    setNotice(message);
+    setNoticeTone(tone);
+  };
 
   const params = new URLSearchParams({ page: String(page), limit: '20' });
   if (tab) params.set('status', tab);
@@ -83,7 +90,7 @@ export function LeavePage() {
     onSuccess: async () => {
       setDecision(null);
       setNote('');
-      setNotice('Pengajuan berhasil diputuskan.');
+      showNotice('Pengajuan berhasil diputuskan.');
       await queryClient.invalidateQueries({ queryKey: ['leave'] });
       await queryClient.invalidateQueries({ queryKey: ['summary'] });
       await queryClient.invalidateQueries({ queryKey: ['dashboard-leave'] });
@@ -104,7 +111,7 @@ export function LeavePage() {
     try {
       await openProtectedFile(`/leave-requests/${id}/attachment`);
     } catch (error) {
-      setNotice(errorMessage(error));
+      showNotice(errorMessage(error), 'error');
     }
   };
 
@@ -117,7 +124,7 @@ export function LeavePage() {
 
       {notice ? (
         <div className="mb-4">
-          <ErrorNotice message={notice} />
+          <Notice message={notice} tone={noticeTone} />
         </div>
       ) : null}
 

@@ -26,6 +26,7 @@ import { useCurrentLocation } from '@/hooks/use-current-location';
 import { useServerClock } from '@/hooks/use-server-clock';
 import { useTheme } from '@/hooks/use-theme';
 import { apiGet, apiRequest, errorMessage } from '@/lib/api';
+import { findAttendanceRecord } from '@/lib/attendance';
 import { formatDateTime, formatTime } from '@/lib/format';
 import { haversineMeters } from '@/lib/geo';
 import {
@@ -35,8 +36,10 @@ import {
 import {
   addDaysToDateString,
   isShiftActiveNow,
+  isWithinClockOutWindow,
   isWithinShiftWindow,
   officeDateString,
+  resolveClockOutWorkDate,
 } from '@/lib/shift';
 import type {
   AttendanceRecord,
@@ -96,9 +99,12 @@ export default function AttendanceScreen() {
           const serverNow = new Date(Date.now() + serverTimeOffset);
           const today = officeDateString(serverNow, activeOffice.timezone);
           const from = addDaysToDateString(today, -1);
+          const to = addDaysToDateString(today, 1);
 
+          // Rentang mencakup kemarin (shift malam), hari ini, dan besok
+          // (Clock-In lebih awal untuk shift yang mulai setelah tengah malam).
           const history = await apiGet<Paginated<AttendanceRecord>>(
-            `/attendance/me?from=${from}&to=${today}&limit=50`,
+            `/attendance/me?from=${from}&to=${to}&limit=50`,
           );
           setRecords(history.data);
 
@@ -152,9 +158,22 @@ export default function AttendanceScreen() {
     [selectedShiftId, shifts],
   );
 
+  const expectedWorkDate = useMemo(() => {
+    if (!office || !selectedShift) {
+      return null;
+    }
+
+    return resolveClockOutWorkDate(
+      now,
+      selectedShift,
+      office.timezone,
+      selectedShift.clockOutGraceMinutes ?? 240,
+    );
+  }, [now, office, selectedShift]);
+
   const record = useMemo(
-    () => records.find((item) => item.shift.id === selectedShiftId) ?? null,
-    [records, selectedShiftId],
+    () => findAttendanceRecord(records, selectedShiftId, expectedWorkDate),
+    [expectedWorkDate, records, selectedShiftId],
   );
 
   const distance =
@@ -165,15 +184,24 @@ export default function AttendanceScreen() {
         })
       : null;
 
-  const accuracyOk = location.accuracy !== null && location.accuracy <= 100;
+  const accuracyLimitMeters = office?.accuracyLimitMeters ?? 100;
+  const accuracyOk =
+    location.accuracy !== null && location.accuracy <= accuracyLimitMeters;
   const withinRadius =
     office !== null && distance !== null && distance <= office.radiusMeters;
-  const withinWindow =
-    office !== null && selectedShift !== null
-      ? isWithinShiftWindow(now, selectedShift, office.timezone)
-      : false;
   const completed = Boolean(record?.clockOut);
   const isClockOut = Boolean(record) && !completed;
+  const withinWindow =
+    office !== null && selectedShift !== null
+      ? isClockOut
+        ? isWithinClockOutWindow(
+            now,
+            selectedShift,
+            office.timezone,
+            selectedShift.clockOutGraceMinutes ?? 240,
+          )
+        : isWithinShiftWindow(now, selectedShift, office.timezone)
+      : false;
 
   const blockingReason = (() => {
     if (!office) return 'Lokasi kantor aktif belum dikonfigurasi.';
@@ -191,7 +219,7 @@ export default function AttendanceScreen() {
       return 'Mock location terdeteksi. Nonaktifkan aplikasi Fake GPS.';
     }
     if (!accuracyOk) {
-      return `Akurasi GPS ${location.accuracy ? Math.round(location.accuracy) : '-'} m, maksimal 100 m.`;
+      return `Akurasi GPS ${location.accuracy ? Math.round(location.accuracy) : '-'} m, maksimal ${accuracyLimitMeters} m.`;
     }
     if (!withinRadius) {
       return `Anda ${distance ? Math.round(distance) : '-'} m dari kantor (maks ${office.radiusMeters} m).`;

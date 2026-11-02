@@ -12,6 +12,7 @@ import {
   Input,
   Loading,
   Modal,
+  Notice,
   PageHeader,
 } from '@/components/ui';
 import { apiGet, apiRequest, errorMessage } from '@/lib/api';
@@ -72,7 +73,13 @@ export function OfficePage() {
   const [savingShift, setSavingShift] = useState(false);
 
   const [notice, setNotice] = useState<string | null>(null);
+  const [noticeTone, setNoticeTone] = useState<'success' | 'error'>('success');
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  const showNotice = (message: string, tone: 'success' | 'error' = 'success') => {
+    setNotice(message);
+    setNoticeTone(tone);
+  };
 
   const officesQuery = useQuery({
     queryKey: ['offices'],
@@ -124,10 +131,10 @@ export function OfficePage() {
           method: 'PATCH',
           body,
         });
-        setNotice('Lokasi kantor diperbarui.');
+        showNotice('Lokasi kantor diperbarui.');
       } else {
         await apiRequest('/office-locations', { method: 'POST', body });
-        setNotice('Lokasi kantor dibuat.');
+        showNotice('Lokasi kantor dibuat.');
       }
 
       setOfficeForm(EMPTY_OFFICE);
@@ -148,11 +155,11 @@ export function OfficePage() {
       await apiRequest(`/office-locations/${office.id}/activate`, {
         method: 'POST',
       });
-      setNotice(`Lokasi ${office.name} diaktifkan.`);
+      showNotice(`Lokasi ${office.name} diaktifkan.`);
       await refreshOffices();
       await queryClient.invalidateQueries({ queryKey: ['summary'] });
     } catch (error) {
-      setNotice(errorMessage(error));
+      showNotice(errorMessage(error), 'error');
     } finally {
       setBusyId(null);
     }
@@ -199,10 +206,10 @@ export function OfficePage() {
           method: 'PATCH',
           body,
         });
-        setNotice('Shift diperbarui.');
+        showNotice('Shift diperbarui.');
       } else {
         await apiRequest('/shifts', { method: 'POST', body });
-        setNotice('Shift dibuat.');
+        showNotice('Shift dibuat.');
       }
 
       setShiftOpen(false);
@@ -224,11 +231,11 @@ export function OfficePage() {
         body: { isActive: !shift.isActive },
       });
       await refreshShifts();
-      setNotice(
+      showNotice(
         shift.isActive ? 'Shift dinonaktifkan.' : 'Shift diaktifkan kembali.',
       );
     } catch (error) {
-      setNotice(errorMessage(error));
+      showNotice(errorMessage(error), 'error');
     } finally {
       setBusyId(null);
     }
@@ -243,7 +250,7 @@ export function OfficePage() {
 
       {notice ? (
         <div className="mb-4">
-          <ErrorNotice message={notice} />
+          <Notice message={notice} tone={noticeTone} />
         </div>
       ) : null}
 

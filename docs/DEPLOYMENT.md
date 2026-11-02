@@ -87,6 +87,8 @@ Isi `.env.production` (contoh ada di repository):
 - `CORS_ORIGIN=https://absensi.example.com`.
 - `STORAGE_DRIVER=s3` + kredensial bucket privat.
 - `TRUST_PROXY=1`.
+- `CLOCK_OUT_GRACE_MINUTES=240` (sesuaikan kebijakan absensi).
+- `LOGIN_IP_LIMIT_MAX` dan `REFRESH_LIMIT_MAX` bila banyak karyawan berbagi NAT.
 
 Migrasi dan buat Admin pertama (jangan memakai seed demo di produksi):
 
@@ -107,6 +109,9 @@ sudo systemctl enable --now clockin-api
 sudo systemctl status clockin-api
 curl -s http://127.0.0.1:4000/api/v1/health
 ```
+
+Unit systemd membaca `EnvironmentFile=/opt/clockin/server/.env.production`
+(selaras dengan nama file pada langkah di atas).
 
 Health harus `{ "ok": true, "db": "ok" }`. Bila `503`, periksa `journalctl -u clockin-api`.
 

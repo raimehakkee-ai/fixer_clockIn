@@ -69,6 +69,30 @@ function requireEmployeeId(req: Request): string {
   return current.employeeId;
 }
 
+async function auditClockFailure(
+  req: Request,
+  action: 'CLOCK_IN' | 'CLOCK_OUT',
+  code: string,
+  metadata: Record<string, string | number | boolean | null> = {},
+): Promise<void> {
+  await writeAudit({
+    actorUserId: actor(req).id,
+    action: `${action}_REJECTED`,
+    entityType: 'attendance_attempt',
+    metadata: {
+      code,
+      shiftId:
+        typeof req.body?.shiftId === 'string' ? req.body.shiftId : null,
+      ...metadata,
+    },
+    req,
+  });
+}
+
+function errorCode(error: unknown): string {
+  return error instanceof ApiError ? error.code : 'UNKNOWN';
+}
+
 function requirePhoto(req: Request): attendance.ClockPhoto {
   const file = req.file;
 
@@ -119,6 +143,9 @@ attendanceRouter.post(
     const body = clockSchema.parse(req.body);
 
     if (body.mocked) {
+      await auditClockFailure(req, 'CLOCK_IN', 'MOCK_LOCATION', {
+        mocked: true,
+      });
       throw ApiError.unprocessable(
         'MOCK_LOCATION',
         'Mock location terdeteksi. Nonaktifkan aplikasi Fake GPS sebelum melakukan absensi.',
@@ -126,6 +153,10 @@ attendanceRouter.post(
     }
 
     if (body.accuracy > env.ACCURACY_LIMIT_M) {
+      await auditClockFailure(req, 'CLOCK_IN', 'LOW_ACCURACY', {
+        accuracy: body.accuracy,
+        limit: env.ACCURACY_LIMIT_M,
+      });
       throw ApiError.unprocessable(
         'LOW_ACCURACY',
         `Akurasi GPS terlalu rendah (${Math.round(body.accuracy)} m). Maksimal ${env.ACCURACY_LIMIT_M} m.`,
@@ -136,16 +167,22 @@ attendanceRouter.post(
     const photo = requirePhoto(req);
     const now = new Date();
 
-    const result = await attendance.clockIn({
-      employeeId,
-      shiftId: body.shiftId,
-      latitude: body.latitude,
-      longitude: body.longitude,
-      accuracy: body.accuracy,
-      photo,
-      ip: req.ip ?? null,
-      now,
-    });
+    let result: Awaited<ReturnType<typeof attendance.clockIn>>;
+    try {
+      result = await attendance.clockIn({
+        employeeId,
+        shiftId: body.shiftId,
+        latitude: body.latitude,
+        longitude: body.longitude,
+        accuracy: body.accuracy,
+        photo,
+        ip: req.ip ?? null,
+        now,
+      });
+    } catch (error) {
+      await auditClockFailure(req, 'CLOCK_IN', errorCode(error));
+      throw error;
+    }
 
     await writeAudit({
       actorUserId: current.id,
@@ -179,6 +216,9 @@ attendanceRouter.post(
     const body = clockSchema.parse(req.body);
 
     if (body.mocked) {
+      await auditClockFailure(req, 'CLOCK_OUT', 'MOCK_LOCATION', {
+        mocked: true,
+      });
       throw ApiError.unprocessable(
         'MOCK_LOCATION',
         'Mock location terdeteksi. Nonaktifkan aplikasi Fake GPS sebelum melakukan absensi.',
@@ -186,6 +226,10 @@ attendanceRouter.post(
     }
 
     if (body.accuracy > env.ACCURACY_LIMIT_M) {
+      await auditClockFailure(req, 'CLOCK_OUT', 'LOW_ACCURACY', {
+        accuracy: body.accuracy,
+        limit: env.ACCURACY_LIMIT_M,
+      });
       throw ApiError.unprocessable(
         'LOW_ACCURACY',
         `Akurasi GPS terlalu rendah (${Math.round(body.accuracy)} m). Maksimal ${env.ACCURACY_LIMIT_M} m.`,
@@ -196,16 +240,22 @@ attendanceRouter.post(
     const photo = requirePhoto(req);
     const now = new Date();
 
-    const result = await attendance.clockOut({
-      employeeId,
-      shiftId: body.shiftId,
-      latitude: body.latitude,
-      longitude: body.longitude,
-      accuracy: body.accuracy,
-      photo,
-      ip: req.ip ?? null,
-      now,
-    });
+    let result: Awaited<ReturnType<typeof attendance.clockOut>>;
+    try {
+      result = await attendance.clockOut({
+        employeeId,
+        shiftId: body.shiftId,
+        latitude: body.latitude,
+        longitude: body.longitude,
+        accuracy: body.accuracy,
+        photo,
+        ip: req.ip ?? null,
+        now,
+      });
+    } catch (error) {
+      await auditClockFailure(req, 'CLOCK_OUT', errorCode(error));
+      throw error;
+    }
 
     await writeAudit({
       actorUserId: current.id,

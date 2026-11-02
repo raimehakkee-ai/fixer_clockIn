@@ -82,23 +82,93 @@ export function minutesSinceShiftStart(
   return (((local - start) % 1440) + 1440) % 1440;
 }
 
-export function resolveWorkDate(
-  at: Date,
-  shift: Pick<ShiftWindow, 'startTime' | 'endTime'>,
-  timeZone: string,
-): string {
-  const localDate = officeDateString(at, timeZone);
+function dateStringToEpochDay(dateString: string): number {
+  const [yearPart, monthPart, dayPart] = dateString.split('-');
+  return Math.floor(
+    Date.UTC(Number(yearPart), Number(monthPart) - 1, Number(dayPart)) /
+      86_400_000,
+  );
+}
 
-  if (!crossesMidnight(shift.startTime, shift.endTime)) {
-    return localDate;
+export type ShiftOccurrence = {
+  workDate: string;
+  relativeMinutes: number;
+};
+
+export function resolveShiftOccurrence(
+  at: Date,
+  shift: Pick<
+    ShiftWindow,
+    'startTime' | 'endTime' | 'earlyWindowMinutes'
+  >,
+  timeZone: string,
+  options: { graceMinutes?: number; allowEarly?: boolean } = {},
+): ShiftOccurrence | null {
+  const localDate = officeDateString(at, timeZone);
+  const localMinutes = officeMinutesOfDay(at, timeZone);
+  const atMinutes = dateStringToEpochDay(localDate) * 1440 + localMinutes;
+  const startMinutes = parseHhMm(shift.startTime);
+  const duration = shiftDurationMinutes(shift);
+  const grace = Math.max(0, options.graceMinutes ?? 0);
+  const early = (options.allowEarly ?? true)
+    ? shift.earlyWindowMinutes
+    : 0;
+  const maxLate = duration + grace;
+
+  let best: (ShiftOccurrence & { score: number }) | null = null;
+
+  for (const dayOffset of [-1, 0, 1]) {
+    const workDate = addDaysToDateString(localDate, dayOffset);
+    const start =
+      dateStringToEpochDay(workDate) * 1440 + startMinutes;
+    const relativeMinutes = atMinutes - start;
+
+    if (relativeMinutes < -early || relativeMinutes > maxLate) {
+      continue;
+    }
+
+    const score = Math.abs(relativeMinutes);
+    if (
+      !best ||
+      score < best.score ||
+      (score === best.score && relativeMinutes >= 0)
+    ) {
+      best = { workDate, relativeMinutes, score };
+    }
   }
 
-  const endMinutes = parseHhMm(shift.endTime);
-  const localMinutes = officeMinutesOfDay(at, timeZone);
+  return best
+    ? { workDate: best.workDate, relativeMinutes: best.relativeMinutes }
+    : null;
+}
 
-  return localMinutes < endMinutes
-    ? addDaysToDateString(localDate, -1)
-    : localDate;
+export function resolveWorkDate(
+  at: Date,
+  shift: Pick<
+    ShiftWindow,
+    'startTime' | 'endTime' | 'earlyWindowMinutes'
+  >,
+  timeZone: string,
+): string {
+  return (
+    resolveShiftOccurrence(at, shift, timeZone)?.workDate ??
+    officeDateString(at, timeZone)
+  );
+}
+
+export function resolveClockOutWorkDate(
+  at: Date,
+  shift: Pick<
+    ShiftWindow,
+    'startTime' | 'endTime' | 'earlyWindowMinutes'
+  >,
+  timeZone: string,
+  graceMinutes: number,
+): string {
+  return (
+    resolveShiftOccurrence(at, shift, timeZone, { graceMinutes })?.workDate ??
+    officeDateString(at, timeZone)
+  );
 }
 
 export function isWithinShiftWindow(
@@ -106,14 +176,18 @@ export function isWithinShiftWindow(
   shift: ShiftWindow,
   timeZone: string,
 ): boolean {
-  const relative = minutesSinceShiftStart(at, shift, timeZone);
-  const duration = shiftDurationMinutes(shift);
+  return resolveShiftOccurrence(at, shift, timeZone) !== null;
+}
 
-  if (relative <= duration) {
-    return true;
-  }
-
-  return relative >= 1440 - shift.earlyWindowMinutes;
+export function isWithinClockOutWindow(
+  at: Date,
+  shift: ShiftWindow,
+  timeZone: string,
+  graceMinutes: number,
+): boolean {
+  return (
+    resolveShiftOccurrence(at, shift, timeZone, { graceMinutes }) !== null
+  );
 }
 
 export function isShiftActiveNow(

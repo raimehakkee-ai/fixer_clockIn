@@ -2,6 +2,14 @@ import { prisma } from '../src/db';
 import { hashPassword } from '../src/lib/password';
 import { crossesMidnight } from '../src/lib/time';
 
+if (process.env.NODE_ENV === 'production') {
+  console.error(
+    'Seed demo tidak boleh dijalankan pada NODE_ENV=production. ' +
+      'Gunakan `npm run admin:create` untuk membuat Admin produksi.',
+  );
+  process.exit(1);
+}
+
 const ADMIN_EMAIL = 'admin@clockin.test';
 const ADMIN_PASSWORD = 'Admin123!';
 const EMPLOYEE_PASSWORD = 'Employee123!';
@@ -24,17 +32,17 @@ async function ensureUser(email: string, password: string, role: Role) {
 }
 
 async function main(): Promise<void> {
-  const officeName = 'dfixer HQ';
+  const officeName = 'Ayam Geprek JnQ Tamamaung (Pettarani 8 No.29)';
   const existingOffice = await prisma.officeLocation.findFirst({
-    where: { name: officeName },
+    orderBy: { createdAt: 'asc' },
   });
 
   const officeData = {
     name: officeName,
-    latitude: -6.2088,
-    longitude: 106.8456,
-    radiusMeters: 50,
-    timezone: 'Asia/Jakarta',
+    latitude: -5.1419048,
+    longitude: 119.4452768,
+    radiusMeters: 100,
+    timezone: 'Asia/Makassar',
     isActive: true,
   };
 
@@ -44,6 +52,12 @@ async function main(): Promise<void> {
         data: officeData,
       })
     : await prisma.officeLocation.create({ data: officeData });
+
+  // Seed harus meninggalkan tepat satu lokasi aktif.
+  await prisma.officeLocation.updateMany({
+    where: { isActive: true, NOT: { id: office.id } },
+    data: { isActive: false },
+  });
 
   const shiftSeeds = [
     { name: 'Shift 1', startTime: '08:00', endTime: '15:00', sortOrder: 1 },

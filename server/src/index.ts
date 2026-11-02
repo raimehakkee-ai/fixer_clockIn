@@ -1,6 +1,7 @@
 import { createApp } from './app';
 import { prisma } from './db';
 import { env } from './env';
+import { finalizeOpenAttendance } from './services/attendance-finalize-service';
 
 const app = createApp();
 const server = app.listen(env.PORT, () => {
@@ -24,6 +25,17 @@ const server = app.listen(env.PORT, () => {
   }
 });
 
+void finalizeOpenAttendance().catch((error) => {
+  console.error('[attendance] gagal finalisasi record terbuka', error);
+});
+
+const finalizeTimer = setInterval(() => {
+  void finalizeOpenAttendance().catch((error) => {
+    console.error('[attendance] gagal finalisasi record terbuka', error);
+  });
+}, 60_000);
+finalizeTimer.unref();
+
 let shuttingDown = false;
 
 async function shutdown(signal: string): Promise<void> {
@@ -32,6 +44,7 @@ async function shutdown(signal: string): Promise<void> {
   }
   shuttingDown = true;
   console.log(`Menerima ${signal}. Menutup server...`);
+  clearInterval(finalizeTimer);
 
   server.close(() => {
     void prisma.$disconnect().finally(() => process.exit(0));

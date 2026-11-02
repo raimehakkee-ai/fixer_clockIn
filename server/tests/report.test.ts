@@ -13,6 +13,7 @@ describe('summarizeAttendance', () => {
     expect(summary).toEqual({
       present: 0,
       late: 0,
+      incomplete: 0,
       onLeave: 0,
       absent: 5,
       attendanceRecords: 0,
@@ -63,7 +64,7 @@ describe('summarizeAttendance', () => {
     expect(summary.absent).toBe(1);
   });
 
-  it('status INCOMPLETE tidak dihitung hadir', () => {
+  it('status INCOMPLETE dihitung terpisah, bukan hadir atau absen', () => {
     const summary = summarizeAttendance({
       totalEmployees: 2,
       records: [{ employeeId: 'a', status: 'INCOMPLETE' }],
@@ -72,7 +73,8 @@ describe('summarizeAttendance', () => {
 
     expect(summary.present).toBe(0);
     expect(summary.late).toBe(0);
-    expect(summary.absent).toBe(2);
+    expect(summary.incomplete).toBe(1);
+    expect(summary.absent).toBe(1);
     expect(summary.attendanceRecords).toBe(1);
   });
 

@@ -145,7 +145,12 @@ const employeeLogin = await login(email, password, `absen-device-${suffix}`);
 check('Login karyawan uji → 200', employeeLogin.status === 200);
 const token = employeeLogin.body?.accessToken;
 
-const base = { shiftId: activeShift.id, latitude: -6.2088, longitude: 106.8456, accuracy: 8 };
+const base = {
+  shiftId: activeShift.id,
+  latitude: Number(office.latitude),
+  longitude: Number(office.longitude),
+  accuracy: 8,
+};
 
 check(
   'Clock-In tanpa token → 401',
@@ -181,7 +186,7 @@ check(
 const outOfRange = await clock('/attendance/clock-in', token, {
   ...base,
   photo: 'png',
-  latitude: -6.2178,
+  latitude: Number(office.latitude) - 0.009,
 });
 check(
   'Di luar radius → 422 OUT_OF_RANGE',
@@ -209,7 +214,11 @@ check('Clock-In sah → 201', clockIn.status === 201);
 const attendanceId = clockIn.body?.attendance?.id;
 const workDate = clockIn.body?.attendance?.workDate;
 check('Status hadir/terlambat sesuai aturan', ['PRESENT', 'LATE'].includes(clockIn.body?.attendance?.status));
-check('Jarak server-side wajar', typeof clockIn.body?.distanceMeters === 'number' && clockIn.body.distanceMeters < 50);
+check(
+  'Jarak server-side wajar',
+  typeof clockIn.body?.distanceMeters === 'number' &&
+    clockIn.body.distanceMeters <= office.radiusMeters,
+);
 check('Respons memuat serverTime', typeof clockIn.body?.serverTime === 'string');
 
 const duplicate = await clock('/attendance/clock-in', token, { ...base, photo: 'png' });
@@ -241,7 +250,29 @@ check(
 const ownerDetail = await request(`/attendance/${attendanceId}`, { headers: auth(token) });
 check('Detail milik sendiri → 200', ownerDetail.status === 200);
 
-const otherLogin = await login('budi@clockin.test', 'Employee123!', 'device-budi-001');
+const otherEmail = `absen.other.${suffix}@clockin.test`;
+const otherEmployee = await request(
+  '/employees',
+  json(
+    'POST',
+    {
+      email: otherEmail,
+      password,
+      employeeNumber: `EMP-OTHER-${suffix}`,
+      fullName: 'Karyawan Lain Uji',
+      officeLocationId: office.id,
+    },
+    adminToken,
+  ),
+);
+check('Buat karyawan pembanding → 201', otherEmployee.status === 201);
+
+const otherLogin = await login(
+  otherEmail,
+  password,
+  `absen-other-device-${suffix}`,
+);
+check('Login karyawan pembanding → 200', otherLogin.status === 200);
 const otherToken = otherLogin.body?.accessToken;
 
 const otherDetail = await request(`/attendance/${attendanceId}`, {

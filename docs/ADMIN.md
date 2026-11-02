@@ -15,7 +15,7 @@
 | :--- | :--- | :--- |
 | `/login` | Login | Hanya role `ADMIN`; karyawan ditolak |
 | `/` | Dashboard | Statistik harian, kehadiran terbaru, pengajuan menunggu (polling 15–30 dtk) |
-| `/attendance` | Kehadiran | Filter tanggal/nama/shift/status, detail foto + koordinat + mock |
+| `/attendance` | Kehadiran | Filter tanggal/nama/shift/status, detail foto + koordinat + mock. Tanggal default mengikuti tanggal kantor dari `/reports/summary`, bukan UTC browser. |
 | `/leave` | Izin & Cuti | Tab status, setujui/tolak dengan catatan, lihat lampiran |
 | `/employees` | Karyawan | Cari, buat, edit, aktif/nonaktif, reset password/perangkat |
 | `/office` | Lokasi & Shift | Geofence kantor + CRUD shift |

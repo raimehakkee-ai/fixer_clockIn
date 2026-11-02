@@ -155,6 +155,7 @@ export type Summary = {
   totalEmployees: number;
   present: number;
   late: number;
+  incomplete: number;
   onLeave: number;
   absent: number;
   attendanceRecords: number;

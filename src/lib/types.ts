@@ -49,6 +49,7 @@ export type Shift = {
   crossesMidnight: boolean;
   toleranceMinutes: number;
   earlyWindowMinutes: number;
+  clockOutGraceMinutes: number;
   isActive: boolean;
   sortOrder: number;
 };
@@ -60,6 +61,7 @@ export type Office = {
   longitude: number;
   radiusMeters: number;
   timezone: string;
+  accuracyLimitMeters: number;
   isActive: boolean;
 };
 

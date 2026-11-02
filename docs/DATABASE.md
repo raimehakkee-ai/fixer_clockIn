@@ -4,7 +4,7 @@
 | :--- | :--- |
 | DBMS | PostgreSQL 14+ |
 | ORM | Prisma 7 (migrasi terversi) |
-| Status | Draft Fase 1 — menunggu persetujuan sebelum migrasi dibuat |
+| Status | Diimplementasikan — migrasi `20261101165303_init` dan `20261103000000_integrity_constraints` |
 | Aturan bisnis | [PRD §6](./PRD.md#6-aturan-bisnis) |
 
 ---
@@ -185,7 +185,11 @@ Indeks: `UNIQUE(name)`, `(is_active, sort_order)`.
 
 - `UNIQUE(employee_id, work_date, shift_id)` — mencegah absensi ganda per shift.
 - `CHECK(clock_out_at IS NULL OR clock_out_at >= clock_in_at)`.
-- `status = INCOMPLETE` bila `clock_out_at IS NULL` (ditegakkan service).
+- `CHECK(late_minutes >= 0)` dan `CHECK(early_leave_minutes >= 0)`.
+- `CHECK(jsonb_typeof(risk_flags) = 'array')`.
+- `status = INCOMPLETE` diisi finalizer otomatis setelah jam selesai shift +
+  `CLOCK_OUT_GRACE_MINUTES`; Clock-Out yang masih dalam grace akan mengembalikan
+  status ke `PRESENT`/`LATE`.
 
 Indeks: `(office_location_id, work_date)`, `(work_date, status)`, `(employee_id, work_date DESC)`, `(shift_id)`.
 
@@ -278,7 +282,11 @@ Data absensi tidak dihapus; koreksi dilakukan melalui fitur koreksi Admin di fas
 - Development: `prisma migrate dev` (membuat migrasi + menerapkan).
 - Test: database terpisah, `prisma migrate deploy` + seed minimal.
 - Produksi: `prisma migrate deploy` saat deploy; tidak pernah `db push`.
-- Seed hanya untuk development/demo, idempoten (`upsert`), berisi Admin, 3 karyawan, 1 kantor, 3 shift, riwayat 14 hari, 2 pengajuan `PENDING`.
+- Migrasi `20261103000000_integrity_constraints` menambahkan CHECK constraint,
+  partial unique index satu lokasi aktif, dan satu perangkat aktif per karyawan.
+- Seed hanya untuk development/demo, idempoten (`upsert`), berisi Admin, 3
+  karyawan, 1 kantor, dan 3 shift. Seed menolak berjalan pada
+  `NODE_ENV=production`.
 - Backup: `pg_dump` harian, retensi 30 hari, salinan di lokasi terpisah; uji restore bulanan.
 - Object storage: versioning aktif; retensi foto sesuai **OPEN-12**.
 

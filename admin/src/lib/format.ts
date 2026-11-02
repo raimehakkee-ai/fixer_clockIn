@@ -39,8 +39,22 @@ export function formatWorkDate(value: string): string {
   }
 }
 
-export function todayString(): string {
-  return new Date().toISOString().slice(0, 10);
+export function todayString(timeZone?: string): string {
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      ...(timeZone ? { timeZone } : {}),
+    }).formatToParts(new Date());
+
+    const read = (type: Intl.DateTimeFormatPartTypes): string =>
+      parts.find((part) => part.type === type)?.value ?? '';
+
+    return `${read('year')}-${read('month')}-${read('day')}`;
+  } catch {
+    return new Date().toLocaleDateString('en-CA');
+  }
 }
 
 export function monthStart(value: string): string {

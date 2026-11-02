@@ -1,5 +1,6 @@
 import type { Prisma } from '../generated/prisma/client';
 import { prisma } from '../db';
+import { env } from '../env';
 import { dateStringToUtcDate as toDateOnly } from '../lib/date-range';
 import { ApiError } from '../lib/errors';
 import { haversineMeters, isWithinRadius, roundDistance } from '../lib/geo';
@@ -7,9 +8,10 @@ import { skipFor } from '../lib/pagination';
 import { prismaErrorCode } from '../lib/prisma-error';
 import { storage } from '../lib/storage';
 import {
+  addDaysToDateString,
   computeLateMinutes,
   isWithinShiftWindow,
-  minutesSinceShiftStart,
+  resolveShiftOccurrence,
   resolveWorkDate,
   shiftDurationMinutes,
 } from '../lib/time';
@@ -176,17 +178,21 @@ export async function clockOut(input: ClockInput) {
   const office = await getActiveOffice();
   const shift = await getActiveShift(input.shiftId);
 
-  if (!isWithinShiftWindow(input.now, shift, office.timezone)) {
+  const occurrence = resolveShiftOccurrence(input.now, shift, office.timezone, {
+    graceMinutes: env.CLOCK_OUT_GRACE_MINUTES,
+  });
+
+  if (!occurrence) {
     throw ApiError.unprocessable(
       'OUTSIDE_SHIFT_WINDOW',
       'Clock-Out hanya dapat dilakukan pada jendela shift yang dipilih.',
     );
   }
 
-  const workDateString = resolveWorkDate(input.now, shift, office.timezone);
-  const workDate = toDateOnly(workDateString);
+  let workDateString = occurrence.workDate;
+  let workDate = toDateOnly(workDateString);
 
-  const record = await prisma.attendanceRecord.findUnique({
+  let record = await prisma.attendanceRecord.findUnique({
     where: {
       employeeId_workDate_shiftId: {
         employeeId: input.employeeId,
@@ -196,6 +202,33 @@ export async function clockOut(input: ClockInput) {
     },
     include: { shift: true, officeLocation: true },
   });
+
+  // Kompatibilitas untuk record lama yang tanggal kerjanya sempat salah
+  // pada batas shift malam: cari record terbuka di sekitar tanggal kerja.
+  if (!record) {
+    const fallback = await prisma.attendanceRecord.findFirst({
+      where: {
+        employeeId: input.employeeId,
+        shiftId: shift.id,
+        clockOutAt: null,
+        // Jangan menutup record lama yang sudah tidak relevan.
+        clockInAt: {
+          gte: new Date(input.now.getTime() - 24 * 60 * 60 * 1000),
+        },
+        workDate: {
+          gte: toDateOnly(addDaysToDateString(workDateString, -1)),
+          lte: toDateOnly(addDaysToDateString(workDateString, 1)),
+        },
+      },
+      orderBy: { clockInAt: 'desc' },
+      include: { shift: true, officeLocation: true },
+    });
+
+    if (fallback) {
+      record = fallback;
+      workDateString = fallback.workDate.toISOString().slice(0, 10);
+    }
+  }
 
   if (!record) {
     throw ApiError.conflict(
@@ -236,16 +269,17 @@ export async function clockOut(input: ClockInput) {
     `attendance/${workDateString}`,
   );
 
-  const relative = minutesSinceShiftStart(input.now, shift, office.timezone);
   const duration = shiftDurationMinutes(shift);
-  const earlyLeaveMinutes =
-    relative >= 1440 - shift.earlyWindowMinutes
-      ? duration
-      : Math.max(0, duration - relative);
+  const earlyLeaveMinutes = Math.max(
+    0,
+    Math.min(duration, duration - occurrence.relativeMinutes),
+  );
 
   try {
-    const updated = await prisma.attendanceRecord.update({
-      where: { id: record.id },
+    // updateMany dengan syarat clockOutAt masih null membuat dua request
+    // Clock-Out yang bersamaan tidak sama-sama berhasil.
+    const updated = await prisma.attendanceRecord.updateMany({
+      where: { id: record.id, clockOutAt: null },
       data: {
         clockOutAt: input.now,
         clockOutLatitude: input.latitude,
@@ -257,12 +291,24 @@ export async function clockOut(input: ClockInput) {
         clockOutPhotoMime: input.photo.mime,
         clockOutIp: input.ip ?? null,
         earlyLeaveMinutes,
+        status: record.lateMinutes > 0 ? 'LATE' : 'PRESENT',
       },
+    });
+
+    if (updated.count === 0) {
+      throw ApiError.conflict(
+        'ALREADY_CLOCKED_OUT',
+        'Anda sudah Clock-Out untuk shift ini.',
+      );
+    }
+
+    const saved = await prisma.attendanceRecord.findUniqueOrThrow({
+      where: { id: record.id },
       include: { shift: true },
     });
 
     return {
-      record: updated,
+      record: saved,
       office,
       shift,
       workDateString,

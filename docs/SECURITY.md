@@ -27,7 +27,7 @@
 
 | Ancaman | Dampak | Kontrol |
 | :--- | :--- | :--- |
-| Fake GPS / mock location | Absensi dari lokasi palsu | `LocationObject.mocked` di klien + penolakan server + `risk_flags` untuk audit |
+| Fake GPS / mock location | Absensi dari lokasi palsu | `LocationObject.mocked` di klien + penolakan server + audit `CLOCK_IN_REJECTED`/`CLOCK_OUT_REJECTED`; `risk_flags` untuk anomali pada record yang diterima |
 | Replay request absensi | Absensi ganda | Unique `(employee, work_date, shift)` + validasi status + idempotency key |
 | Manipulasi waktu perangkat | Jam absensi palsu | Timestamp hanya dari server; waktu klien diabaikan |
 | Manipulasi koordinat/jarak | Absensi di luar radius | Server menghitung Haversine dari konfigurasi kantor |
@@ -73,7 +73,7 @@
 1. Autentikasi + role + status akun + perangkat aktif.
 2. Validasi skema (Zod) untuk semua field.
 3. Tolak `mocked = true` → `422 MOCK_LOCATION`.
-4. Tolak `accuracy > 100 m` → `422 LOW_ACCURACY` (nilai final menunggu OPEN-08).
+4. Tolak `accuracy > ACCURACY_LIMIT_M` (default 100 m) → `422 LOW_ACCURACY` (nilai final menunggu OPEN-08).
 5. Hitung jarak dengan Haversine; tolak di luar radius → `422 OUT_OF_RANGE`.
 6. Validasi jendela shift; tolak di luar jendela.
 7. Simpan foto setelah validasi; hapus bila transaksi gagal.
@@ -91,7 +91,7 @@
 - Validasi isi file dengan magic bytes (JPEG `FF D8 FF`, PNG `89 50 4E 47`, PDF `%PDF-`).
 - Maksimum 5 MB per file; satu file per request absensi.
 - Foto absensi hanya dapat diambil melalui API dengan Bearer token pemilik/Admin.
-- Header respons: `Cache-Control: private, max-age=300`, `Content-Type` dari MIME tervalidasi, `X-Content-Type-Options: nosniff`, `Content-Disposition: inline` untuk gambar.
+- Header respons: `Cache-Control: private, max-age=300`, `Content-Type` dari MIME tervalidasi, `X-Content-Type-Options: nosniff`, `Content-Disposition: inline` untuk gambar dan `attachment` untuk PDF lampiran.
 - Lampiran izin dapat diunduh hanya oleh pemilik/Admin.
 - Retensi dan penghapusan mengikuti keputusan OPEN-12.
 
@@ -102,7 +102,7 @@
 - `helmet` (CSP, HSTS di produksi, `nosniff`, frame deny).
 - CORS allow-list dari environment; tidak memakai `*` dengan kredensial.
 - Body JSON maksimum 1 MB; multipart 5 MB.
-- Rate limit pada login, absensi, pengajuan, dan ekspor.
+- Rate limit pada login, refresh, absensi, pengajuan, dan ekspor; batas login/refresh per IP dapat dikonfigurasi agar tidak memblokir pergantian shift di jaringan NAT kantor.
 - Validasi seluruh input (Zod) termasuk query dan parameter path.
 - Prisma/parameterized query; tidak ada SQL string concatenation.
 - Error produksi tanpa stack trace; `requestId` untuk korelasi.

@@ -233,6 +233,10 @@ leaveRequestsRouter.get('/:id/attachment', async (req, res) => {
   res.setHeader('Content-Type', result.mime);
   res.setHeader('Cache-Control', 'private, max-age=300');
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  if (result.mime === 'application/pdf') {
+    // PDF tidak dijalankan inline di origin admin.
+    res.setHeader('Content-Disposition', 'attachment; filename="lampiran.pdf"');
+  }
   res.send(result.buffer);
 });
 

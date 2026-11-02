@@ -8,6 +8,7 @@ export type SummaryRecord = {
 export type AttendanceSummary = {
   present: number;
   late: number;
+  incomplete: number;
   onLeave: number;
   absent: number;
   attendanceRecords: number;
@@ -25,32 +26,42 @@ export function summarizeAttendance(params: {
 }): AttendanceSummary {
   const late = new Set<string>();
   const present = new Set<string>();
+  const incomplete = new Set<string>();
 
   for (const record of params.records) {
     if (record.status === 'LATE') {
       late.add(record.employeeId);
     } else if (record.status === 'PRESENT') {
       present.add(record.employeeId);
+    } else {
+      incomplete.add(record.employeeId);
     }
   }
 
   for (const employeeId of late) {
     present.delete(employeeId);
+    incomplete.delete(employeeId);
+  }
+
+  for (const employeeId of present) {
+    incomplete.delete(employeeId);
   }
 
   const attended = new Set([...present, ...late]);
+  const accountedFor = new Set([...attended, ...incomplete]);
 
   const onLeave = new Set(
     params.approvedLeaveEmployeeIds.filter(
-      (employeeId) => !attended.has(employeeId),
+      (employeeId) => !accountedFor.has(employeeId),
     ),
   );
 
-  const accounted = new Set([...attended, ...onLeave]);
+  const accounted = new Set([...accountedFor, ...onLeave]);
 
   return {
     present: present.size,
     late: late.size,
+    incomplete: incomplete.size,
     onLeave: onLeave.size,
     absent: Math.max(0, params.totalEmployees - accounted.size),
     attendanceRecords: params.records.length,

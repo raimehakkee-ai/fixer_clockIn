@@ -16,7 +16,7 @@ Status: ✅ terpenuhi · ⚠️ sebagian · ❌ belum / di luar rilis
 | F-06 | Clock-Out radius sama | `clockOut` memakai office record | Smoke absensi | ✅ |
 | F-07 | Selfie hanya dari kamera | `CameraView`, tanpa galeri | Kode mobile; uji perangkat belum | ⚠️ |
 | F-08 | Tolak mock location | `LocationObject.mocked` + server | Smoke server; uji perangkat belum | ⚠️ |
-| F-09 | Batas akurasi GPS | Maks 100 m | Smoke absensi | ✅ |
+| F-09 | Batas akurasi GPS | `ACCURACY_LIMIT_M` (default 100 m) | Smoke absensi | ✅ |
 | F-10 | Waktu server | Semua timestamp dari `new Date()` server | Smoke & unit time | ✅ |
 | F-11 | Cegah absensi ganda | Unique `(employee, workDate, shift)` | Smoke absensi 409 | ✅ |
 | F-12 | 3 shift/24 jam + toleransi 15 mnt | Tabel `shifts` + seed | Smoke admin; UI lokasi/shift | ✅ |

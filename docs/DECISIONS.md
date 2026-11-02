@@ -18,7 +18,7 @@ Tanggal baseline: **2026-11-01** (Fase 0–1).
 | D-002 | Web Admin | Aplikasi terpisah `admin/` — Vite + React 19 + Tailwind CSS v4 | CONFIRMED | Persetujuan pemilik produk, Fase 0 |
 | D-003 | Database & ORM | PostgreSQL + Prisma 7, migrasi terversi | CONFIRMED | Persetujuan pemilik produk, Fase 0 |
 | D-004 | Backend | Node.js + Express 5, REST API berprefiks `/api/v1` | CONFIRMED | AGENT.md §9 |
-| D-005 | Struktur repo | `src/` (Expo), `admin/`, `server/`, `shared/`, `docs/`, `infra/`; tanpa npm workspaces | PROPOSED | ARCHITECTURE §6 |
+| D-005 | Struktur repo | `src/` (Expo), `admin/`, `server/`, `docs/`, `infra/`; tanpa npm workspaces | PROPOSED | ARCHITECTURE §6 |
 | D-006 | Penyimpanan file | Interface driver: `local` (dev) + S3-compatible privat (produksi) | PROPOSED | ARCHITECTURE §3.5 |
 | D-007 | Peta | Tidak memakai SDK peta; koordinat + jarak + tautan Google Maps | PROPOSED | PRD §4.5 |
 | D-008 | Bahasa | UI dan dokumentasi produk berbahasa Indonesia; istilah teknis tetap Inggris | CONFIRMED | AGENT.md §1 |
@@ -35,7 +35,7 @@ Tanggal baseline: **2026-11-01** (Fase 0–1).
 | D-012 | Jumlah lokasi | **Satu lokasi kantor aktif** pada rilis pertama | CONFIRMED | Jawaban pemilik produk, Fase 0 |
 | D-013 | Radius geofence | Default **50 meter**, dapat diubah Admin (10–1000 m) | CONFIRMED | PRD awal + PRD §6 |
 | D-014 | Tanggal kerja | `work_date` = tanggal **mulai** shift pada zona waktu kantor; shift malam tetap milik tanggal mulai | PROPOSED | DATABASE §5 |
-| D-015 | Status `ABSENT` | Tidak disimpan; dihitung di laporan untuk shift berakhir tanpa absensi & tanpa izin | PROPOSED | DATABASE §5 |
+| D-015 | Status `ABSENT` | Tidak disimpan; dihitung di laporan untuk shift berakhir tanpa absensi & tanpa izin. Karena penugasan shift belum disimpan, angka “Belum Absen” bersifat perkiraan | PROPOSED | DATABASE §5 |
 | D-016 | Pengelolaan jam shift | Jam, nama, dan toleransi shift **dikelola Admin melalui dashboard**; seed: Shift 1 08:00–15:00, Shift 2 15:00–22:00, Shift 3 22:00–08:00 (lintas tengah malam) | CONFIRMED | Jawaban pemilik produk, Fase 1 |
 | D-017 | Penugasan shift | Karyawan **memilih shift saat Clock-In** dari daftar shift aktif | CONFIRMED | Jawaban pemilik produk, Fase 1 |
 | D-018 | Clock-In lebih awal | Maksimal 120 menit sebelum shift | **OPEN** | OPEN-03 |
@@ -57,8 +57,8 @@ Tanggal baseline: **2026-11-01** (Fase 0–1).
 | D-027 | Token | Access JWT 15 menit; refresh 30 hari, rotasi, disimpan sebagai hash SHA-256 | PROPOSED |
 | D-028 | Registrasi perangkat | Login pertama mengikat perangkat + audit `DEVICE_REGISTERED`; perangkat berbeda ditolak; Admin dapat reset + audit | CONFIRMED (Fase 2–3) |
 | D-029 | Batas akurasi GPS | Tolak jika `accuracy > 100 m` | CONFIRMED (Fase 4) |
-| D-030 | Mock location | Klien memblokir via `LocationObject.mocked`; server menolak `mocked=true` dan menyimpan `risk_flags` | CONFIRMED (Fase 4) |
-| D-031 | Idempotensi absensi | Unique `(employee_id, work_date, shift_id)` + `409`; header `Idempotency-Key` opsional | PROPOSED |
+| D-030 | Mock location | Klien memblokir via `LocationObject.mocked`; server menolak `mocked=true` dan mencatat audit `CLOCK_IN_REJECTED`; `risk_flags` untuk anomali pada record yang diterima | CONFIRMED (Fase 4 + perbaikan) |
+| D-031 | Idempotensi absensi | Unique `(employee_id, work_date, shift_id)` + `409`; Clock-Out memakai update kondisional. Header `Idempotency-Key` belum menyimpan respons | PROPOSED |
 | D-032 | Ekspor | CSV **dan** XLSX; sel diformat agar tidak dieksekusi sebagai formula | CONFIRMED (kebutuhan) |
 | D-033 | Audit log | Mencatat aksi admin, perangkat, approval, dan ekspor | CONFIRMED (kebutuhan) |
 | D-034 | Penyimpanan token web | Token di penyimpanan browser; CSP wajib di produksi | PROPOSED |
@@ -79,6 +79,9 @@ Tanggal baseline: **2026-11-01** (Fase 0–1).
 | D-049 | Trust proxy | `TRUST_PROXY` dapat dikonfigurasi; produksi memakai `1` karena API hanya diakses via Nginx | CONFIRMED (Fase 8) |
 | D-050 | Bootstrap Admin produksi | Admin pertama dibuat via `npm run admin:create` (bukan seed demo); seed demo hanya untuk development | CONFIRMED (Fase 8) |
 | D-051 | Mode web mobile | Web dibangun sebagai **SPA** (`web.output: "single"`), bukan SSR; seluruh layar berada di balik autentikasi sehingga SSR hanya memicu hydration mismatch | CONFIRMED (perbaikan) |
+| D-052 | Grace period Clock-Out | Clock-Out diizinkan sampai `CLOCK_OUT_GRACE_MINUTES` (default 240 menit) setelah jam selesai shift; Clock-In tetap berakhir di jam selesai | CONFIRMED (perbaikan) |
+| D-053 | Status `INCOMPLETE` | Finalizer periodik menandai record tanpa Clock-Out setelah shift + grace sebagai `INCOMPLETE`; Clock-Out dalam grace mengembalikan status `PRESENT`/`LATE` | CONFIRMED (perbaikan) |
+| D-054 | Audit percobaan absensi | Percobaan Clock-In/Out yang ditolak dicatat sebagai `CLOCK_IN_REJECTED`/`CLOCK_OUT_REJECTED`; `risk_flags` tetap disediakan untuk anomali pada record yang diterima | CONFIRMED (perbaikan) |
 
 ---
 

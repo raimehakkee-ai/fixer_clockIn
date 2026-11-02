@@ -34,7 +34,7 @@ Login pertama mendaftarkan perangkat Anda secara otomatis.
    - Shift 3: 22:00–08:00
 4. Tunggu bagian **Lokasi** menampilkan jarak dan akurasi. Tombol absen aktif jika:
    - Anda berada di dalam radius kantor,
-   - akurasi GPS ≤ 100 m,
+   - akurasi GPS ≤ batas server (default 100 m),
    - tidak terdeteksi aplikasi Fake GPS,
    - waktu masih dalam jendela shift.
 5. Tekan **Ambil Selfie**, lalu **Kirim Absen Masuk**.

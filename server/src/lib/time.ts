@@ -92,6 +92,15 @@ export function addDaysToDateString(dateString: string, days: number): string {
   return base.toISOString().slice(0, 10);
 }
 
+export function dateStringToEpochDay(dateString: string): number {
+  const [year, month, day] = dateString.split('-').map(Number);
+  if (!year || !month || !day) {
+    throw new Error(`Tanggal tidak valid: ${dateString}`);
+  }
+
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
+}
+
 /** Menit berlalu sejak jam mulai shift, dinormalisasi ke 0..1439. */
 export function minutesSinceShiftStart(
   at: Date,
@@ -103,24 +112,113 @@ export function minutesSinceShiftStart(
   return (((local - start) % 1440) + 1440) % 1440;
 }
 
+export type ShiftOccurrence = {
+  workDate: string;
+  /** Selisih menit dari jam mulai shift pada tanggal kerja tersebut. */
+  relativeMinutes: number;
+};
+
+export type ShiftOccurrenceOptions = {
+  /** Menit tambahan setelah jam selesai shift (khusus Clock-Out). */
+  graceMinutes?: number;
+  /**
+   * Izinkan waktu sebelum jam mulai shift selama earlyWindowMinutes.
+   * Default true agar perilaku Clock-In yang sudah ada tidak berubah.
+   */
+  allowEarly?: boolean;
+};
+
 /**
- * Tanggal kerja untuk shift yang mungkin melewati tengah malam.
- * Shift 22:00–08:00 yang dimulai pada 1 Nov: Clock-In pukul 02:00 tanggal 2 Nov
- * tetap milik work_date 1 Nov.
+ * Mencari kemunculan shift yang paling dekat dengan waktu `at`.
+ *
+ * Pendekatan ini menggantikan perhitungan modulo sederhana yang bermasalah
+ * pada dua kasus: Clock-Out tepat di jam selesai shift malam, dan Clock-In
+ * lebih awal sebelum tengah malam untuk shift yang mulai setelah 00:00.
+ */
+export function resolveShiftOccurrence(
+  at: Date,
+  shift: Pick<
+    ShiftWindow,
+    'startTime' | 'endTime' | 'earlyWindowMinutes'
+  >,
+  timeZone: string,
+  options: ShiftOccurrenceOptions = {},
+): ShiftOccurrence | null {
+  const localDate = officeDateString(at, timeZone);
+  const localMinutes = officeMinutesOfDay(at, timeZone);
+  const atMinutes = dateStringToEpochDay(localDate) * 1440 + localMinutes;
+  const startMinutes = parseHhMm(shift.startTime);
+  const duration = shiftDurationMinutes(shift);
+  const grace = Math.max(0, options.graceMinutes ?? 0);
+  const allowEarly = options.allowEarly ?? true;
+  const early = allowEarly ? shift.earlyWindowMinutes : 0;
+  const maxLate = duration + grace;
+
+  let best: (ShiftOccurrence & { score: number }) | null = null;
+
+  for (const dayOffset of [-1, 0, 1]) {
+    const workDate = addDaysToDateString(localDate, dayOffset);
+    const start =
+      dateStringToEpochDay(workDate) * 1440 + startMinutes;
+    const relativeMinutes = atMinutes - start;
+
+    if (relativeMinutes < -early || relativeMinutes > maxLate) {
+      continue;
+    }
+
+    const score = Math.abs(relativeMinutes);
+    if (
+      !best ||
+      score < best.score ||
+      (score === best.score && relativeMinutes >= 0)
+    ) {
+      best = { workDate, relativeMinutes, score };
+    }
+  }
+
+  if (!best) {
+    return null;
+  }
+
+  return {
+    workDate: best.workDate,
+    relativeMinutes: best.relativeMinutes,
+  };
+}
+
+/**
+ * Tanggal kerja untuk Clock-In, termasuk shift yang melewati tengah malam.
+ * Shift 22:00–08:00 yang dimulai pada 1 Nov: Clock-In pukul 02:00 tanggal
+ * 2 Nov tetap milik work_date 1 Nov.
  */
 export function resolveWorkDate(
   at: Date,
-  shift: Pick<ShiftWindow, 'startTime' | 'endTime'>,
+  shift: Pick<
+    ShiftWindow,
+    'startTime' | 'endTime' | 'earlyWindowMinutes'
+  >,
   timeZone: string,
 ): string {
-  const localDate = officeDateString(at, timeZone);
-  if (!crossesMidnight(shift.startTime, shift.endTime)) {
-    return localDate;
-  }
+  return (
+    resolveShiftOccurrence(at, shift, timeZone)?.workDate ??
+    officeDateString(at, timeZone)
+  );
+}
 
-  const endMinutes = parseHhMm(shift.endTime);
-  const localMinutes = officeMinutesOfDay(at, timeZone);
-  return localMinutes < endMinutes ? addDaysToDateString(localDate, -1) : localDate;
+/** Tanggal kerja untuk Clock-Out, termasuk grace period setelah shift. */
+export function resolveClockOutWorkDate(
+  at: Date,
+  shift: Pick<
+    ShiftWindow,
+    'startTime' | 'endTime' | 'earlyWindowMinutes'
+  >,
+  timeZone: string,
+  graceMinutes: number,
+): string {
+  return (
+    resolveShiftOccurrence(at, shift, timeZone, { graceMinutes })?.workDate ??
+    officeDateString(at, timeZone)
+  );
 }
 
 /**
@@ -132,12 +230,43 @@ export function isWithinShiftWindow(
   shift: ShiftWindow,
   timeZone: string,
 ): boolean {
-  const relative = minutesSinceShiftStart(at, shift, timeZone);
-  const duration = shiftDurationMinutes(shift);
-  if (relative <= duration) {
-    return true;
-  }
-  return relative >= 1440 - shift.earlyWindowMinutes;
+  return resolveShiftOccurrence(at, shift, timeZone) !== null;
+}
+
+/**
+ * Clock-Out boleh dilakukan setelah shift berakhir selama grace period,
+ * agar karyawan tidak kehilangan absensi pulang karena terlambat beberapa menit.
+ */
+export function isWithinClockOutWindow(
+  at: Date,
+  shift: ShiftWindow,
+  timeZone: string,
+  graceMinutes: number,
+): boolean {
+  return (
+    resolveShiftOccurrence(at, shift, timeZone, { graceMinutes }) !== null
+  );
+}
+
+/**
+ * Apakah `at` sudah melewati jam selesai shift + grace untuk workDate tertentu.
+ * Dipakai finalizer untuk menandai record tanpa Clock-Out sebagai INCOMPLETE.
+ */
+export function isPastShiftEnd(
+  at: Date,
+  workDate: string,
+  shift: Pick<ShiftWindow, 'startTime' | 'endTime'>,
+  timeZone: string,
+  graceMinutes = 0,
+): boolean {
+  const endMinutes =
+    parseHhMm(shift.startTime) + shiftDurationMinutes(shift) + graceMinutes;
+  const endWall = dateStringToEpochDay(workDate) * 1440 + endMinutes;
+  const nowWall =
+    dateStringToEpochDay(officeDateString(at, timeZone)) * 1440 +
+    officeMinutesOfDay(at, timeZone);
+
+  return nowWall > endWall;
 }
 
 /** Keterlambatan setelah toleransi. Clock-In lebih awal selalu 0. */

@@ -16,8 +16,11 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci
+      - run: npm test
       - run: npm run typecheck
       - run: npm run lint
+      - run: npx expo-doctor
+      - run: npx expo export --platform web
 
   server:
     runs-on: ubuntu-latest

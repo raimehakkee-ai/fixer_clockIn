@@ -89,12 +89,18 @@ export function DashboardPage() {
         <StatCard label="Hadir" value={summary.present} icon={UserCheck} tone="emerald" />
         <StatCard label="Terlambat" value={summary.late} icon={Clock} tone="amber" />
         <StatCard
+          label="Belum Keluar"
+          value={summary.incomplete ?? 0}
+          icon={Clock}
+          tone="amber"
+        />
+        <StatCard
           label="Izin / Cuti"
           value={summary.onLeave}
           icon={CalendarClock}
           tone="indigo"
         />
-        <StatCard label="Tanpa Keterangan" value={summary.absent} icon={UserX} tone="red" />
+        <StatCard label="Belum Absen" value={summary.absent} icon={UserX} tone="red" />
         <StatCard
           label="Pengajuan Menunggu"
           value={summary.pendingLeaveRequests}

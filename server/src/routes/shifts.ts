@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { env } from '../env';
 import { writeAudit } from '../lib/audit';
 import { toShiftDto } from '../lib/dto';
 import { idParam } from '../lib/params';
@@ -43,7 +44,11 @@ shiftsRouter.get('/', async (req, res) => {
     current.role === 'ADMIN' && req.query.includeInactive === 'true';
 
   const rows = await shifts.listShifts(includeInactive);
-  res.json({ data: rows.map(toShiftDto) });
+  res.json({
+    data: rows.map((shift) =>
+      toShiftDto(shift, env.CLOCK_OUT_GRACE_MINUTES),
+    ),
+  });
 });
 
 shiftsRouter.post('/', requireRole('ADMIN'), async (req, res) => {
@@ -60,7 +65,9 @@ shiftsRouter.post('/', requireRole('ADMIN'), async (req, res) => {
     req,
   });
 
-  res.status(201).json({ shift: toShiftDto(shift) });
+  res.status(201).json({
+    shift: toShiftDto(shift, env.CLOCK_OUT_GRACE_MINUTES),
+  });
 });
 
 shiftsRouter.patch('/:id', requireRole('ADMIN'), async (req, res) => {
@@ -77,5 +84,5 @@ shiftsRouter.patch('/:id', requireRole('ADMIN'), async (req, res) => {
     req,
   });
 
-  res.json({ shift: toShiftDto(shift) });
+  res.json({ shift: toShiftDto(shift, env.CLOCK_OUT_GRACE_MINUTES) });
 });

@@ -14,9 +14,9 @@ import { StatCard } from '@/components/stat-card';
 import {
   Button,
   Card,
-  ErrorNotice,
   Field,
   Input,
+  Notice,
   PageHeader,
   Select,
 } from '@/components/ui';
@@ -25,11 +25,17 @@ import { formatWorkDate, monthStart, todayString } from '@/lib/format';
 import type { Summary } from '@/lib/types';
 
 export function ReportsPage() {
-  const [from, setFrom] = useState(monthStart(todayString()));
-  const [to, setTo] = useState(todayString());
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
   const [format, setFormat] = useState<'csv' | 'xlsx'>('csv');
   const [downloading, setDownloading] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [noticeTone, setNoticeTone] = useState<'success' | 'error'>('success');
+
+  const showNotice = (message: string, tone: 'success' | 'error' = 'success') => {
+    setNotice(message);
+    setNoticeTone(tone);
+  };
 
   const summaryQuery = useQuery({
     queryKey: ['summary'],
@@ -37,23 +43,29 @@ export function ReportsPage() {
   });
 
   const summary = summaryQuery.data?.summary;
+  const effectiveTo = to || summary?.date || todayString();
+  const effectiveFrom = from || monthStart(effectiveTo);
 
   const download = async (report: 'attendance' | 'leave') => {
     setDownloading(report);
     setNotice(null);
 
     try {
-      const params = new URLSearchParams({ from, to, format });
+      const params = new URLSearchParams({
+        from: effectiveFrom,
+        to: effectiveTo,
+        format,
+      });
       const prefix = report === 'attendance' ? 'rekap-absensi' : 'rekap-izin';
       await downloadFile(
         `/reports/${report}/export?${params.toString()}`,
-        `${prefix}-${from}_${to}.${format}`,
+        `${prefix}-${effectiveFrom}_${effectiveTo}.${format}`,
       );
-      setNotice(
+      showNotice(
         `Unduhan ${format.toUpperCase()} dimulai. Aktivitas tercatat di audit log.`,
       );
     } catch (error) {
-      setNotice(errorMessage(error));
+      showNotice(errorMessage(error), 'error');
     } finally {
       setDownloading(null);
     }
@@ -68,7 +80,7 @@ export function ReportsPage() {
 
       {notice ? (
         <div className="mb-4">
-          <ErrorNotice message={notice} />
+          <Notice message={notice} tone={noticeTone} />
         </div>
       ) : null}
 
@@ -91,13 +103,19 @@ export function ReportsPage() {
           tone="amber"
         />
         <StatCard
+          label="Belum Keluar"
+          value={summary?.incomplete ?? 0}
+          icon={Clock}
+          tone="amber"
+        />
+        <StatCard
           label="Izin / Cuti Hari Ini"
           value={summary?.onLeave ?? 0}
           icon={CalendarClock}
           tone="indigo"
         />
         <StatCard
-          label="Tanpa Keterangan"
+          label="Belum Absen"
           value={summary?.absent ?? 0}
           icon={UserX}
           tone="red"
@@ -121,14 +139,14 @@ export function ReportsPage() {
           <Field label="Dari tanggal">
             <Input
               type="date"
-              value={from}
+              value={effectiveFrom}
               onChange={(event) => setFrom(event.target.value)}
             />
           </Field>
           <Field label="Sampai tanggal">
             <Input
               type="date"
-              value={to}
+              value={effectiveTo}
               onChange={(event) => setTo(event.target.value)}
             />
           </Field>

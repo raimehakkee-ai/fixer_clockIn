@@ -106,7 +106,7 @@ const loginLimiter = rateLimit({
 
 const loginIpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: env.LOGIN_IP_LIMIT_MAX,
   key: (req) => req.ip ?? 'unknown',
   message: 'Terlalu banyak percobaan login dari jaringan ini. Coba lagi nanti.',
 });
@@ -124,7 +124,7 @@ function getDummyPasswordHash(): Promise<string> {
 
 const refreshLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 60,
+  max: env.REFRESH_LIMIT_MAX,
 });
 
 export const authRouter = Router();

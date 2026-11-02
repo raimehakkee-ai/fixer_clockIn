@@ -133,10 +133,8 @@ dfixer_clockIn/
 │   ├── prisma/              schema, migrations, seed
 │   ├── src/                 routes, services, middleware, lib
 │   └── tests/               unit & integrasi
-├── shared/                  tipe kontrak & kode error (dipakai 3 proyek)
 ├── docs/                    dokumen ini
-├── infra/                   nginx, systemd, contoh deployment
-└── docker-compose.yml       PostgreSQL untuk pengembangan alternatif
+└── infra/                   Nginx, systemd, dan skrip operasional
 ```
 
 Proyek tidak memakai npm workspaces agar Metro/Expo tidak terpengaruh hoisting; setiap proyek memiliki `package.json` sendiri.
@@ -147,7 +145,7 @@ Proyek tidak memakai npm workspaces agar Metro/Expo tidak terpengaruh hoisting; 
 
 | Lingkungan | Database | Storage | Catatan |
 | :--- | :--- | :--- | :--- |
-| Development | PostgreSQL lokal (`prisma dev`) atau docker-compose | `local` | Seed data demo |
+| Development | PostgreSQL lokal (`prisma dev`) atau PostgreSQL yang sudah berjalan | `local` | Seed data demo |
 | Test | Database terpisah, dibuat ulang per run | `local` sementara | Tidak memakai data produksi |
 | Production | PostgreSQL terkelola/VPS | S3-compatible privat | HTTPS, backup harian |
 
@@ -176,7 +174,8 @@ File `.env` tidak di-commit. Contoh variabel disediakan di `.env.example`.
 ### Idempotensi
 
 - Constraint unik `(employee_id, work_date, shift_id)` mencegah record ganda.
-- Header opsional `Idempotency-Key` disimpan bersama hash payload untuk retry aman (**PROPOSED**, diimplementasikan Fase 4).
+- Clock-Out memakai update kondisional `WHERE clock_out_at IS NULL` untuk mencegah dua request bersamaan berhasil.
+- Header opsional `Idempotency-Key` **belum** menyimpan respons; masih PROPOSED.
 - Retry Clock-In yang sama mengembalikan `409 ALREADY_CLOCKED_IN` tanpa membuat baris baru.
 
 ### Logging

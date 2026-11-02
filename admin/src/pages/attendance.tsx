@@ -29,7 +29,7 @@ import type {
 } from '@/lib/types';
 
 export function AttendancePage() {
-  const [date, setDate] = useState(todayString());
+  const [date, setDate] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<'' | AttendanceStatus>('');
   const [shiftId, setShiftId] = useState('');
@@ -41,13 +41,16 @@ export function AttendancePage() {
     queryFn: () => apiGet<{ summary: Summary }>('/reports/summary'),
   });
 
+  const summary = summaryQuery.data?.summary;
+  const effectiveDate = date ?? summary?.date ?? todayString();
+
   const shiftsQuery = useQuery({
     queryKey: ['shifts', 'all'],
     queryFn: () => apiGet<{ data: Shift[] }>('/shifts?includeInactive=true'),
   });
 
   const params = new URLSearchParams({
-    date,
+    date: effectiveDate,
     page: String(page),
     limit: '20',
   });
@@ -57,10 +60,10 @@ export function AttendancePage() {
   if (shiftId) params.set('shiftId', shiftId);
 
   const attendanceQuery = useQuery({
-    queryKey: ['attendance', date, query, status, shiftId, page],
+    queryKey: ['attendance', effectiveDate, query, status, shiftId, page],
     queryFn: () =>
       apiGet<Paginated<AttendanceRecord>>(`/attendance?${params.toString()}`),
-    enabled: Boolean(date),
+    enabled: Boolean(effectiveDate),
   });
 
   const detailQuery = useQuery({
@@ -70,7 +73,7 @@ export function AttendancePage() {
     enabled: Boolean(selectedId),
   });
 
-  const timezone = summaryQuery.data?.summary.timezone;
+  const timezone = summary?.timezone;
   const records = attendanceQuery.data?.data ?? [];
   const meta = attendanceQuery.data?.meta;
   const detail = detailQuery.data?.attendance;
@@ -87,7 +90,7 @@ export function AttendancePage() {
           <Field label="Tanggal">
             <Input
               type="date"
-              value={date}
+              value={effectiveDate}
               onChange={(event) => {
                 setDate(event.target.value);
                 setPage(1);

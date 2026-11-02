@@ -26,7 +26,7 @@ Modul Admin (Fase 3):
 Mesin absensi (Fase 4):
 
 - `POST /attendance/clock-in` dan `clock-out` (multipart, foto wajib JPEG/PNG, magic bytes, maks 5 MB).
-- Validasi server-side: shift aktif, jendela shift, Haversine radius kantor, batas akurasi 100 m, penolakan mock location.
+- Validasi server-side: shift aktif, jendela Clock-In, grace period Clock-Out, Haversine radius kantor, batas akurasi `ACCURACY_LIMIT_M` (default 100 m), penolakan mock location.
 - Waktu server; `work_date` sadar shift malam (22:00–08:00); anti-duplikasi per (karyawan, tanggal kerja, shift).
 - Riwayat karyawan, monitoring admin, detail, dan foto ber-otorisasi (pemilik/Admin).
 - Storage driver: lokal (`uploads/`, di-gitignore) atau S3-compatible privat.
@@ -48,14 +48,19 @@ Laporan & audit (Fase 6a):
 - Batas 20.000 baris per ekspor; rate limit 10 unduhan/jam per Admin; setiap unduhan diaudit.
 - `GET /audit-logs` — filter action, actor, entity, periode, pagination.
 
-Total pengujian: 81 unit test, 18 smoke auth, 41 smoke admin, 29 smoke absensi, 30 smoke izin, 31 smoke laporan, 41 security check.
+- Grace period Clock-Out (`CLOCK_OUT_GRACE_MINUTES`, default 240 menit) dan
+  finalizer otomatis yang menandai record tanpa Clock-Out sebagai `INCOMPLETE`.
+- Audit `CLOCK_IN_REJECTED`/`CLOCK_OUT_REJECTED` untuk percobaan yang ditolak.
+- Constraint database untuk radius, jam shift, tanggal izin, dan satu perangkat aktif.
+
+Total pengujian: 94 unit test backend + 9 unit test mobile, 18 smoke auth, 41 smoke admin, 31 smoke absensi, 30 smoke izin, 31 smoke laporan, 41 security check.
 Audit dependensi produksi: **0 kerentanan** (setelah `exceljs` diganti penulis XLSX berbasis `fflate`).
 
 Belum tersedia (fase berikutnya): deployment produksi (Nginx, HTTPS, backup teruji).
 
 ## Prasyarat
 
-- Node.js 22.12+ (diuji pada 22.22.1)
+- Node.js 22.13+ (diuji pada 22.22.1)
 - PostgreSQL 14+ **atau** Prisma local Postgres (`npx prisma dev`) tanpa Docker
 
 ## Setup
@@ -87,13 +92,14 @@ lalu gunakan `.../clockin?sslmode=disable`.
 ### Opsi B — PostgreSQL biasa / Docker
 
 ```bash
-docker compose up -d           # dari root repo
+# Gunakan PostgreSQL lokal yang sudah berjalan, lalu set DATABASE_URL:
 # DATABASE_URL="postgresql://clockin:clockin@localhost:5432/clockin"
 ```
 
 ### Migrasi dan seed
 
 ```bash
+npx prisma generate            # wajib: generated client tidak di-commit
 npx prisma migrate deploy      # atau: npx prisma migrate dev
 npm run db:seed
 npm run dev                    # http://localhost:4000/api/v1

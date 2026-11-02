@@ -86,7 +86,7 @@ Role bersifat *additive-ready*; penambahan role baru tidak boleh merusak aturan 
 ### 4.3 Clock-Out
 
 1. Validasi sama seperti Clock-In, termasuk **radius kantor yang sama** (keputusan terkonfirmasi).
-2. Server memastikan ada Clock-In sah pada shift yang sama dan belum ada Clock-Out.
+2. Server memastikan ada Clock-In sah pada shift yang sama dan belum ada Clock-Out. Clock-Out masih diterima selama grace period setelah jam selesai shift (default 240 menit).
 3. `clock_out_at` dari waktu server; selisih pulang lebih awal dihitung untuk laporan.
 
 ### 4.4 Pengajuan izin/cuti/sakit

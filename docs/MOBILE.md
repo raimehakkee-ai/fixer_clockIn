@@ -45,7 +45,7 @@ EXPO_PUBLIC_API_URL=http://localhost:4000
 ```bash
 # Terminal 1 — database & API
 cd server
-npx prisma dev --detach        # atau PostgreSQL dari docker-compose
+npx prisma dev --detach        # atau PostgreSQL lokal yang sudah berjalan
 npx prisma migrate deploy
 npm run db:seed                # hanya sekali / saat reset data
 npm run dev                    # http://localhost:4000/api/v1
@@ -65,8 +65,9 @@ Akun demo (development): `budi@clockin.test` / `Employee123!` (lihat `server/REA
 2. **Pilih shift** — aplikasi memilih shift yang sedang berjalan secara default; karyawan dapat mengganti. Jendela shift dan toleransi berasal dari server.
 3. **Lokasi** — izin lokasi diminta; aplikasi menampilkan jarak ke kantor, akurasi GPS, dan status radius. Flag `mocked` dari `expo-location` memblokir absensi.
 4. **Selfie** — kamera depan (`CameraView`) wajib; tidak ada akses galeri. Foto dikirim multipart.
-5. **Kirim** — server tetap sumber kebenaran: radius Haversine, akurasi maksimal 100 m, mock location, jendela shift, dan waktu server divalidasi ulang.
+5. **Kirim** — server tetap sumber kebenaran: radius Haversine, batas akurasi dari `accuracyLimitMeters`, mock location, jendela Clock-In, grace period Clock-Out, dan waktu server divalidasi ulang.
 6. **Hasil** — status (`Hadir`/`Terlambat`), jam server, dan jarak ditampilkan; riwayat diperbarui.
+7. **Batalkan izin** — pengajuan `PENDING` dapat dibatalkan dari tab Izin; status berubah menjadi `CANCELLED`.
 
 ---
 
@@ -96,11 +97,12 @@ Akun demo (development): `budi@clockin.test` / `Employee123!` (lihat `server/REA
 
 | Pemeriksaan | Hasil |
 | :--- | :--- |
+| `npm test` | 9 unit test logika tanggal kerja & window |
 | `npx tsc --noEmit` | Lulus |
 | `npx expo lint` | Lulus (0 error/warning) |
 | `npx expo-doctor` | 20/20 pemeriksaan lulus |
 | `npx expo export --platform web` | Berhasil — semua route ter-bundle |
-| API (auth/admin/absensi/izin) | 118 smoke test lulus (lihat `server/README.md`) |
+| API (auth/admin/absensi/izin/laporan) | 151 smoke test lulus (lihat `server/README.md`) |
 
 **Belum diuji:** perangkat Android/iOS nyata (kamera, GPS asli, mock location, shift malam). Lingkungan pengembangan ini tidak memiliki emulator/perangkat. Karena itu, klaim "siap produksi" belum dibuat.
 

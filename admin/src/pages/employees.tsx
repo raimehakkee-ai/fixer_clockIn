@@ -12,6 +12,7 @@ import {
   Input,
   Loading,
   Modal,
+  Notice,
   PageHeader,
   Pagination,
   Select,
@@ -57,6 +58,12 @@ export function EmployeesPage() {
   const [resetError, setResetError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [noticeTone, setNoticeTone] = useState<'success' | 'error'>('success');
+
+  const showNotice = (message: string, tone: 'success' | 'error' = 'success') => {
+    setNotice(message);
+    setNoticeTone(tone);
+  };
 
   const params = new URLSearchParams({ page: String(page), limit: '20' });
   if (search.trim()) params.set('q', search.trim());
@@ -120,7 +127,7 @@ export function EmployeesPage() {
           method: 'PATCH',
           body: base,
         });
-        setNotice('Data karyawan diperbarui.');
+        showNotice('Data karyawan diperbarui.');
       } else {
         await apiRequest('/employees', {
           method: 'POST',
@@ -131,7 +138,7 @@ export function EmployeesPage() {
             employeeNumber: form.employeeNumber.trim(),
           },
         });
-        setNotice('Karyawan baru dibuat.');
+        showNotice('Karyawan baru dibuat.');
       }
 
       setFormOpen(false);
@@ -152,14 +159,14 @@ export function EmployeesPage() {
         method: 'PATCH',
         body: { isActive: !employee.isActive },
       });
-      setNotice(
+      showNotice(
         employee.isActive
           ? 'Karyawan dinonaktifkan.'
           : 'Karyawan diaktifkan kembali.',
       );
       await refresh();
     } catch (error) {
-      setNotice(errorMessage(error));
+      showNotice(errorMessage(error), 'error');
     } finally {
       setBusyId(null);
     }
@@ -179,12 +186,12 @@ export function EmployeesPage() {
         `/employees/${employee.id}/reset-device`,
         { method: 'POST' },
       );
-      setNotice(
+      showNotice(
         `Perangkat direset (${result.revokedDevices} perangkat dicabut).`,
       );
       await refresh();
     } catch (error) {
-      setNotice(errorMessage(error));
+      showNotice(errorMessage(error), 'error');
     } finally {
       setBusyId(null);
     }
@@ -202,7 +209,7 @@ export function EmployeesPage() {
       });
       setResetTarget(null);
       setNewPassword('');
-      setNotice('Password karyawan direset. Semua sesi dicabut.');
+      showNotice('Password karyawan direset. Semua sesi dicabut.');
     } catch (error) {
       setResetError(errorMessage(error));
     }
@@ -223,7 +230,7 @@ export function EmployeesPage() {
 
       {notice ? (
         <div className="mb-4">
-          <ErrorNotice message={notice} />
+          <Notice message={notice} tone={noticeTone} />
         </div>
       ) : null}
 

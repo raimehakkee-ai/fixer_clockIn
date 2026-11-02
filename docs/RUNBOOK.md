@@ -58,7 +58,7 @@ curl -s http://localhost:4000/api/v1/health
 | API 500 berulang | Cek `journalctl`/log; catat `requestId` dari respons; periksa perubahan terakhir. |
 | `DEVICE_NOT_AUTHORIZED` | Admin → Karyawan → **Reset Perangkat**. |
 | Mock location terdeteksi | Minta karyawan menonaktifkan Fake GPS; bukan kegagalan sistem. |
-| Akurasi GPS buruk | Ulangi di area terbuka; batas 100 m. |
+| Akurasi GPS buruk | Ulangi di area terbuka; batas default 100 m (`ACCURACY_LIMIT_M`). |
 | Di luar radius | Verifikasi koordinat/radius kantor; perbarui jika salah. |
 | Ekspor 422 `EXPORT_TOO_LARGE` | Persempit periode/filter karyawan. |
 | Ekspor 429 | Tunggu 1 jam (limit 10 unduhan/jam). |

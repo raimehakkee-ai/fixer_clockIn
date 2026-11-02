@@ -8,12 +8,14 @@
     "scheme": "dfixerclockin",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "bundleIdentifier": "com.dfixer.clockin",
       "icon": "./assets/expo.icon",
       "config": {
         "usesNonExemptEncryption": false
       }
     },
     "android": {
+      "package": "com.dfixer.clockin",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

@@ -72,15 +72,22 @@
 
 | Endpoint | Batas |
 | :--- | :--- |
-| `POST /auth/login` | 10 / 15 menit per IP+email |
+| `POST /auth/login` | 10 / 15 menit per IP+email, 120 / 15 menit per IP |
+| `POST /auth/refresh` | 300 / 15 menit per IP |
 | `POST /attendance/clock-in` / `clock-out` | 20 / jam per karyawan |
 | `POST /leave-requests` | 10 / hari per karyawan |
 | Ekspor laporan | 10 / jam per Admin |
 
+Batas login/refresh per IP dapat diatur lewat `LOGIN_IP_LIMIT_MAX` dan
+`REFRESH_LIMIT_MAX` agar pergantian shift dari satu jaringan NAT tidak saling blokir.
+
 ### Idempotensi
 
-- Clock-In/Out aman dari duplikasi melalui unique constraint + `409`.
-- Header `Idempotency-Key` (opsional, PROPOSED) mengembalikan respons tersimpan untuk retry identik.
+- Clock-In aman dari duplikasi melalui unique constraint + `409`.
+- Clock-Out memakai update kondisional `WHERE clock_out_at IS NULL`, sehingga dua
+  request bersamaan tidak sama-sama berhasil.
+- Header `Idempotency-Key` belum menyimpan respons; nilainya saat ini hanya
+  diizinkan pada CORS untuk kompatibilitas klien.
 
 ### Matriks Akses
 
@@ -218,10 +225,13 @@ Validasi: email unik, `employee_number` unik, `shiftId` harus aktif, password mi
 Contoh `PATCH`:
 
 ```json
-{ "name": "dfixer HQ", "latitude": -6.2088, "longitude": 106.8456, "radiusMeters": 50, "timezone": "Asia/Jakarta" }
+{ "name": "Ayam Geprek JnQ Tamamaung", "latitude": -5.141905, "longitude": 119.445277, "radiusMeters": 100, "timezone": "Asia/Makassar" }
 ```
 
-Validasi: lat -90..90, lng -180..180, radius 10..1000, `timezone` IANA valid. Hanya satu lokasi aktif (D-006).
+Respons juga memuat `accuracyLimitMeters` (dari `ACCURACY_LIMIT_M`) agar klien
+memakai batas akurasi yang sama dengan server.
+
+Validasi: lat -90..90, lng -180..180, radius 10..1000, `timezone` IANA valid. Hanya satu lokasi aktif (D-012), ditegakkan juga oleh partial unique index database.
 
 ---
 
@@ -236,6 +246,10 @@ Validasi: lat -90..90, lng -180..180, radius 10..1000, `timezone` IANA valid. Ha
 ```json
 { "name": "Malam", "startTime": "23:00", "endTime": "07:00", "toleranceMinutes": 15, "earlyWindowMinutes": 120, "isActive": true }
 ```
+
+Respons shift juga memuat `clockOutGraceMinutes` (dari
+`CLOCK_OUT_GRACE_MINUTES`, default 240) agar jendela Clock-Out di klien sama
+dengan server.
 
 `crosses_midnight` dihitung server dari `endTime <= startTime`. Jam shift **dapat diubah Admin** melalui dashboard (D-016); seed: Shift 1 08:00–15:00, Shift 2 15:00–22:00, Shift 3 22:00–08:00.
 
@@ -269,8 +283,8 @@ Validasi: lat -90..90, lng -180..180, radius 10..1000, `timezone` IANA valid. Ha
     "shift": { "id": "…", "name": "Shift 1", "startTime": "08:00", "endTime": "15:00" },
     "clockIn": {
       "at": "2026-11-01T01:03:12.000Z",
-      "latitude": -6.2088,
-      "longitude": 106.8456,
+      "latitude": -5.141905,
+      "longitude": 119.445277,
       "accuracy": 8,
       "distanceMeters": 12.4,
       "mocked": false,
@@ -288,7 +302,10 @@ Penolakan: `422 MOCK_LOCATION`, `422 LOW_ACCURACY`, `422 OUT_OF_RANGE`, `422 INV
 
 ### `POST /attendance/clock-out`
 
-Multipart sama dengan Clock-In, **termasuk `shiftId`** (shift yang dipilih saat Clock-In). Validasi radius, akurasi, mock location, dan jendela shift sama (D-005).
+Multipart sama dengan Clock-In, **termasuk `shiftId`** (shift yang dipilih saat Clock-In). Radius, akurasi, dan mock location divalidasi sama. Clock-Out masih
+diizinkan setelah jam selesai shift selama `CLOCK_OUT_GRACE_MINUTES` (default 240
+menit), sehingga karyawan tidak kehilangan absensi pulang karena terlambat
+beberapa menit. Clock-In tetap ditolak setelah shift berakhir.
 
 `200` → `{ attendance, distanceMeters, serverTime }` dengan `attendance.clockOut` terisi dan `earlyLeaveMinutes` dihitung server.
 
@@ -362,8 +379,9 @@ Admin. `date` opsional (`YYYY-MM-DD`, default hari ini pada zona waktu kantor).
     "date": "2026-11-01",
     "timezone": "Asia/Jakarta",
     "totalEmployees": 12,
-    "present": 8,
+    "present": 7,
     "late": 1,
+    "incomplete": 1,
     "onLeave": 1,
     "absent": 2,
     "attendanceRecords": 10,
@@ -372,7 +390,12 @@ Admin. `date` opsional (`YYYY-MM-DD`, default hari ini pada zona waktu kantor).
 }
 ```
 
-Kategori saling eksklusif: karyawan terlambat tidak dihitung sebagai hadir; karyawan yang sudah absen tidak dihitung sebagai izin. `absent` = karyawan aktif − (hadir + terlambat + izin), tidak pernah negatif. Record `INCOMPLETE` dihitung sebagai record, bukan hadir.
+Kategori saling eksklusif: karyawan terlambat tidak dihitung sebagai hadir;
+karyawan dengan record `INCOMPLETE` (sudah Clock-In, belum Clock-Out setelah
+grace period) dihitung terpisah dan tidak dihitung sebagai hadir atau izin.
+`absent` = karyawan aktif − (hadir + terlambat + incomplete + izin), tidak pernah
+negatif. Karena sistem belum menyimpan penugasan shift per karyawan, angka ini
+adalah perkiraan dan tidak boleh dipakai untuk payroll.
 
 ### `GET /reports/attendance/export?from=&to=&employeeId=&shiftId=&status=&format=csv|xlsx`
 
@@ -388,10 +411,10 @@ Admin. Periode dihitung dari tumpang tindih `start_date`–`end_date` dengan ren
 
 **Format file:**
 - **CSV**: UTF-8 BOM, CRLF, semua sel dikutip; sel teks berawalan `=`, `+`, `-`, `@`, TAB, atau CR diberi prefiks `'` (formula injection).
-- **XLSX**: dibuat dengan ExcelJS; nilai ditulis sebagai teks/angka, bukan formula.
+- **XLSX**: dibuat dengan penulis minimal berbasis `fflate`; nilai ditulis sebagai teks/angka, bukan formula.
 - `Content-Disposition: attachment`, nama file `rekap-absensi-<from>_<to>.<ext>` atau `rekap-izin-<from>_<to>.<ext>`.
 
-**Audit:** setiap ekspor menulis `EXPORT_DOWNLOADED` (jenis laporan, periode, format, jumlah baris, filter).
+**Audit:** setiap ekspor menulis `EXPORT_DOWNLOADED` (jenis laporan, periode, format, jumlah baris, filter). Percobaan absensi yang ditolak juga dicatat sebagai `CLOCK_IN_REJECTED` / `CLOCK_OUT_REJECTED` dengan kode alasan (mis. `MOCK_LOCATION`, `OUT_OF_RANGE`, `LOW_ACCURACY`).
 
 ---
 
@@ -435,7 +458,7 @@ curl -s -X POST http://localhost:4000/api/v1/auth/login \
 curl -s -X POST http://localhost:4000/api/v1/attendance/clock-in \
   -H "Authorization: Bearer $TOKEN" \
   -F photo=@selfie.jpg \
-  -F latitude=-6.2088 -F longitude=106.8456 -F accuracy=8.5 -F mocked=false
+  -F latitude=-5.141905 -F longitude=119.445277 -F accuracy=8.5 -F mocked=false
 
 # Statistik Admin
 curl -s "http://localhost:4000/api/v1/reports/attendance?from=2026-11-01&to=2026-11-01" \

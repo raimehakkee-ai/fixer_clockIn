@@ -5,11 +5,14 @@ import {
   computeLateMinutes,
   crossesMidnight,
   formatHhMm,
+  isPastShiftEnd,
+  isWithinClockOutWindow,
   isWithinShiftWindow,
   minutesSinceShiftStart,
   officeDateString,
   officeMinutesOfDay,
   parseHhMm,
+  resolveShiftOccurrence,
   resolveWorkDate,
   shiftDurationMinutes,
   type ShiftWindow,
@@ -92,6 +95,36 @@ describe('resolveWorkDate pada shift malam', () => {
   it('shift pagi tidak menggeser tanggal', () => {
     expect(resolveWorkDate(at('2026-11-02T01:00:00Z'), shift1, TZ)).toBe('2026-11-02');
   });
+
+  it('Clock-Out tepat pukul 08:00 tetap milik tanggal mulai shift malam', () => {
+    expect(resolveWorkDate(at('2026-11-02T01:00:00Z'), shift3, TZ)).toBe('2026-11-01');
+  });
+
+  it('Clock-In sebelum tengah malam untuk shift yang mulai setelah 00:00 memakai tanggal shift berikutnya', () => {
+    const earlyMorningShift: ShiftWindow = {
+      startTime: '01:00',
+      endTime: '09:00',
+      toleranceMinutes: 15,
+      earlyWindowMinutes: 120,
+    };
+
+    expect(
+      resolveWorkDate(at('2026-11-01T16:30:00Z'), earlyMorningShift, TZ),
+    ).toBe('2026-11-02');
+  });
+
+  it('shift lintas hari yang mulai setelah tengah malam juga memakai tanggal mulai yang benar', () => {
+    const lateMorningShift: ShiftWindow = {
+      startTime: '00:30',
+      endTime: '08:30',
+      toleranceMinutes: 15,
+      earlyWindowMinutes: 120,
+    };
+
+    expect(
+      resolveWorkDate(at('2026-11-01T16:30:00Z'), lateMorningShift, TZ),
+    ).toBe('2026-11-02');
+  });
 });
 
 describe('minutesSinceShiftStart', () => {
@@ -123,6 +156,80 @@ describe('isWithinShiftWindow', () => {
     expect(isWithinShiftWindow(at('2026-11-01T12:59:00Z'), shift3, TZ)).toBe(false);
     expect(isWithinShiftWindow(at('2026-11-01T19:00:00Z'), shift3, TZ)).toBe(true);
     expect(isWithinShiftWindow(at('2026-11-02T01:30:00Z'), shift3, TZ)).toBe(false);
+  });
+});
+
+describe('isWithinClockOutWindow', () => {
+  it('mengizinkan Clock-Out setelah shift berakhir selama grace period', () => {
+    // Shift 08:00–15:00. 15:01 dan 19:00 masih dalam grace 240 menit.
+    expect(isWithinClockOutWindow(at('2026-11-01T08:01:00Z'), shift1, TZ, 240)).toBe(true);
+    expect(isWithinClockOutWindow(at('2026-11-01T12:00:00Z'), shift1, TZ, 240)).toBe(true);
+  });
+
+  it('menolak Clock-Out setelah grace period habis', () => {
+    expect(isWithinClockOutWindow(at('2026-11-01T12:01:00Z'), shift1, TZ, 240)).toBe(false);
+  });
+
+  it('menolak Clock-Out setelah shift berakhir bila grace 0', () => {
+    expect(isWithinClockOutWindow(at('2026-11-01T08:01:00Z'), shift1, TZ, 0)).toBe(false);
+  });
+
+  it('mengizinkan Clock-Out shift malam tepat pada jam selesai', () => {
+    expect(isWithinClockOutWindow(at('2026-11-02T01:00:00Z'), shift3, TZ, 240)).toBe(true);
+  });
+
+  it('tetap menolak Clock-In setelah shift berakhir', () => {
+    expect(isWithinShiftWindow(at('2026-11-01T08:01:00Z'), shift1, TZ)).toBe(false);
+  });
+});
+
+describe('isPastShiftEnd', () => {
+  it('belum melewati batas pada akhir grace period', () => {
+    // Shift 08:00–15:00, grace 240 -> batas 19:00 waktu Jakarta.
+    expect(
+      isPastShiftEnd(at('2026-11-01T12:00:00Z'), '2026-11-01', shift1, TZ, 240),
+    ).toBe(false);
+  });
+
+  it('melewati batas satu menit setelah grace period', () => {
+    expect(
+      isPastShiftEnd(at('2026-11-01T12:01:00Z'), '2026-11-01', shift1, TZ, 240),
+    ).toBe(true);
+  });
+
+  it('menghitung shift malam sampai hari berikutnya', () => {
+    // Shift 22:00–08:00 + grace 240 -> batas 12:00 tanggal berikutnya.
+    expect(
+      isPastShiftEnd(at('2026-11-02T05:00:00Z'), '2026-11-01', shift3, TZ, 240),
+    ).toBe(false);
+    expect(
+      isPastShiftEnd(at('2026-11-02T05:01:00Z'), '2026-11-01', shift3, TZ, 240),
+    ).toBe(true);
+  });
+});
+
+describe('resolveShiftOccurrence', () => {
+  it('memilih kemunculan shift yang paling dekat', () => {
+    const occurrence = resolveShiftOccurrence(
+      at('2026-11-01T00:30:00Z'),
+      shift1,
+      TZ,
+    );
+
+    expect(occurrence?.workDate).toBe('2026-11-01');
+    expect(occurrence?.relativeMinutes).toBe(-30);
+  });
+
+  it('menghitung menit relatif setelah shift berakhir', () => {
+    const occurrence = resolveShiftOccurrence(
+      at('2026-11-01T08:30:00Z'),
+      shift1,
+      TZ,
+      { graceMinutes: 240 },
+    );
+
+    expect(occurrence?.workDate).toBe('2026-11-01');
+    expect(occurrence?.relativeMinutes).toBe(450);
   });
 });
 

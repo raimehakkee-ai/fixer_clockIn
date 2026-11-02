@@ -9,7 +9,7 @@ User=clockin
 Group=clockin
 WorkingDirectory=/opt/clockin/server
 Environment=NODE_ENV=production
-EnvironmentFile=/opt/clockin/server/.env
+EnvironmentFile=/opt/clockin/server/.env.production
 ExecStart=/usr/bin/npm run start
 Restart=always
 RestartSec=5

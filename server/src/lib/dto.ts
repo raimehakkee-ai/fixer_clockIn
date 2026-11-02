@@ -78,7 +78,10 @@ type OfficeShape = {
   updatedAt: Date;
 };
 
-export function toOfficeDto(office: OfficeShape) {
+export function toOfficeDto(
+  office: OfficeShape,
+  accuracyLimitMeters = 100,
+) {
   return {
     id: office.id,
     name: office.name,
@@ -86,6 +89,7 @@ export function toOfficeDto(office: OfficeShape) {
     longitude: Number(office.longitude),
     radiusMeters: office.radiusMeters,
     timezone: office.timezone,
+    accuracyLimitMeters,
     isActive: office.isActive,
     createdAt: office.createdAt.toISOString(),
     updatedAt: office.updatedAt.toISOString(),
@@ -106,7 +110,10 @@ type ShiftShape = {
   updatedAt: Date;
 };
 
-export function toShiftDto(shift: ShiftShape) {
+export function toShiftDto(
+  shift: ShiftShape,
+  clockOutGraceMinutes = 240,
+) {
   return {
     id: shift.id,
     name: shift.name,
@@ -115,6 +122,7 @@ export function toShiftDto(shift: ShiftShape) {
     crossesMidnight: shift.crossesMidnight,
     toleranceMinutes: shift.toleranceMinutes,
     earlyWindowMinutes: shift.earlyWindowMinutes,
+    clockOutGraceMinutes,
     isActive: shift.isActive,
     sortOrder: shift.sortOrder,
     createdAt: shift.createdAt.toISOString(),

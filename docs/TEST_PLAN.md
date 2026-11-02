@@ -87,6 +87,10 @@ Data uji tidak boleh memakai database produksi. Setiap tes integrasi membersihka
 | ATT-18 | Waktu perangkat diubah | Tidak berpengaruh pada timestamp server |
 | ATT-19 | Retry request identik | Tidak membuat record baru |
 | ATT-20 | Foto karyawan A diakses karyawan B | `404` |
+| ATT-21 | Clock-Out 1 menit setelah jam selesai shift | `200` selama masih dalam `CLOCK_OUT_GRACE_MINUTES` |
+| ATT-22 | Clock-Out setelah grace period habis | `422 OUTSIDE_SHIFT_WINDOW` |
+| ATT-23 | Clock-Out tepat pukul 08:00 pada shift malam 22:00–08:00 | `200`, record `work_date` tanggal mulai |
+| ATT-24 | Record tanpa Clock-Out melewati shift + grace | status berubah menjadi `INCOMPLETE` oleh finalizer |
 
 ### 3.4 Izin/Cuti (LEAVE)
 

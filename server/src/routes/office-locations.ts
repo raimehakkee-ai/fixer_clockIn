@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { env } from '../env';
 import { writeAudit } from '../lib/audit';
 import { toOfficeDto } from '../lib/dto';
 import { idParam } from '../lib/params';
@@ -35,7 +36,11 @@ officeLocationsRouter.use(authenticate);
 
 officeLocationsRouter.get('/', async (_req, res) => {
   const rows = await offices.listOffices();
-  res.json({ data: rows.map(toOfficeDto) });
+  res.json({
+    data: rows.map((office) =>
+      toOfficeDto(office, env.ACCURACY_LIMIT_M),
+    ),
+  });
 });
 
 officeLocationsRouter.post('/', requireRole('ADMIN'), async (req, res) => {
@@ -52,7 +57,9 @@ officeLocationsRouter.post('/', requireRole('ADMIN'), async (req, res) => {
     req,
   });
 
-  res.status(201).json({ office: toOfficeDto(office) });
+  res
+    .status(201)
+    .json({ office: toOfficeDto(office, env.ACCURACY_LIMIT_M) });
 });
 
 officeLocationsRouter.patch('/:id', requireRole('ADMIN'), async (req, res) => {
@@ -69,7 +76,7 @@ officeLocationsRouter.patch('/:id', requireRole('ADMIN'), async (req, res) => {
     req,
   });
 
-  res.json({ office: toOfficeDto(office) });
+  res.json({ office: toOfficeDto(office, env.ACCURACY_LIMIT_M) });
 });
 
 officeLocationsRouter.post(
@@ -88,6 +95,6 @@ officeLocationsRouter.post(
       req,
     });
 
-    res.json({ office: toOfficeDto(office) });
+    res.json({ office: toOfficeDto(office, env.ACCURACY_LIMIT_M) });
   },
 );

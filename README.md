@@ -6,7 +6,7 @@ selfie kamera, deteksi mock location, serta dashboard Admin/HRD.
 ## Fitur
 
 - **Mobile (Expo/React Native)**: login dengan pengikatan perangkat, pemilihan shift, Clock-In/Out dengan GPS + selfie, riwayat kehadiran, pengajuan izin/cuti, profil.
-- **API (Express + Prisma + PostgreSQL)**: autentikasi JWT, absensi server-side (Haversine, akurasi, mock location), izin/cuti, CRUD karyawan/lokasi/shift, audit log.
+- **API (Express + Prisma + PostgreSQL)**: autentikasi JWT, absensi server-side (Haversine, akurasi, mock location, grace period Clock-Out, status `INCOMPLETE` otomatis), izin/cuti, CRUD karyawan/lokasi/shift, audit log.
 - **Web Admin (Vite + React + Tailwind)**: dashboard kehadiran, monitoring + foto/koordinat, approval izin, pengelolaan karyawan/lokasi/shift, ekspor CSV/XLSX, dan audit log.
 
 ## Struktur
@@ -16,12 +16,12 @@ selfie kamera, deteksi mock location, serta dashboard Admin/HRD.
 ├── server/     API Express + Prisma + PostgreSQL
 ├── admin/      Web Admin React + Tailwind
 ├── docs/       PRD, arsitektur, database, API, keamanan, test plan, keputusan
-└── shared/     (dicadangkan untuk kontrak tipe lintas proyek)
+└── infra/      Nginx, systemd, dan skrip operasional
 ```
 
 ## Prasyarat
 
-- Node.js 22.12+
+- Node.js 22.13+
 - PostgreSQL 14+ **atau** Prisma local Postgres (`npx prisma dev`, tanpa Docker)
 
 ## Menjalankan
@@ -32,6 +32,7 @@ cd server
 npm install
 cp .env.example .env        # sesuaikan DATABASE_URL & JWT_ACCESS_SECRET
 npx prisma dev --detach     # salin URL TCP ke DATABASE_URL
+npx prisma generate         # wajib: generated client tidak di-commit
 npx prisma migrate deploy
 npm run db:seed
 npm run dev                 # http://localhost:4000/api/v1
@@ -64,13 +65,14 @@ Detail admin: [`docs/ADMIN.md`](./docs/ADMIN.md)
 
 ```bash
 # Mobile
+npm test          # unit test logika tanggal kerja & window absensi
 npm run typecheck
 npm run lint
 
-# Backend (server harus berjalan)
+# Backend (server harus berjalan untuk smoke)
 cd server
-npm test          # 81 unit test
-npm run smoke     # 149 pemeriksaan integrasi (auth, admin, absensi, izin, laporan)
+npm test          # 94 unit test
+npm run smoke     # 151 pemeriksaan integrasi (auth, admin, absensi, izin, laporan)
 npm run smoke:security  # 41 pemeriksaan keamanan (jalankan pada server baru di-restart)
 
 # Web Admin
@@ -79,9 +81,9 @@ npm run build     # typecheck + vite build
 ```
 
 Hasil terakhir: typecheck mobile & admin lulus, lint lulus, `expo-doctor` 20/20,
-export web mobile berhasil, build admin berhasil, 81 unit test + 149 smoke test +
-41 security check lulus, audit dependensi server/admin 0 kerentanan,
-production smoke (simulasi lokal) 13/13 lulus.
+export web mobile berhasil, build admin berhasil, 9 unit test mobile + 94 unit test
+backend + 151 smoke test + 41 security check lulus, audit dependensi server/admin
+0 kerentanan, production smoke (simulasi lokal) 13/13 lulus.
 
 ## Deployment
 
@@ -127,6 +129,12 @@ Status rilis: **Release Candidate** — sign-off dan item P1 (uji perangkat, VPS
 - Selfie bukan verifikasi biometrik.
 - Perangkat Android/iOS nyata belum diuji di lingkungan pengembangan ini.
 - UI mobile dan Web Admin belum diuji visual di browser (tidak ada browser pada lingkungan ini); bundling/typecheck sudah divalidasi.
-- Web Admin memakai `localStorage` untuk token; CSP wajib di produksi.
+- Web Admin memakai `localStorage` untuk token; CSP ketat wajib di produksi.
+- Reset perangkat oleh Admin mencabut sesi, tetapi perangkat yang sama masih dapat
+  mendaftar ulang jika login lebih dulu; ini keputusan produk yang perlu ditinjau.
+- Ringkasan “Belum Absen” bersifat perkiraan karena sistem tidak menyimpan
+  penugasan shift per karyawan; angka ini tidak boleh dipakai untuk payroll.
+- Dashboard harian memakai `work_date` (tanggal mulai shift), sehingga shift malam
+  yang sedang berjalan setelah tengah malam tampil pada tanggal sebelumnya.
 - Backup/restore belum diuji (lihat `docs/BACKUP.md`); `npm audit` root masih 13 moderate dari toolchain Expo.
 - 13 advisory moderate Expo belum diperbaiki karena perbaikannya berupa perubahan major/downgrade.

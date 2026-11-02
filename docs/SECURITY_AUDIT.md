@@ -12,8 +12,9 @@
 
 | Pemeriksaan | Hasil |
 | :--- | :--- |
-| Unit test backend | **81/81 lulus** (11 file) |
-| Smoke API (auth/admin/absensi/izin/laporan) | **149/149 lulus** |
+| Unit test backend | **94/94 lulus** (11 file) |
+| Unit test mobile | **9/9 lulus** (logika tanggal kerja & window) |
+| Smoke API (auth/admin/absensi/izin/laporan) | **151/151 lulus** |
 | Security smoke | **41/41 lulus** |
 | Web Admin build + CSP meta | **Lulus** |
 | Mobile typecheck/lint/doctor/export | Lulus (Fase 5b; kode mobile tidak berubah) |
@@ -70,8 +71,8 @@ Tidak ada kerentanan **high** atau **critical** pada ketiga proyek.
 
 | Risiko | Status | Catatan |
 | :--- | :--- | :--- |
-| Token Admin di `localStorage` | Diterima sementara | CSP + sanitasi wajib; pertimbangkan cookie HttpOnly pada Fase 8 |
-| Mock location hanya dari klien | Diterima | Tidak ada Play Integrity/App Attest; server mencatat `risk_flags` |
+| Token Admin di `localStorage` | Diterima sementara | CSP ketat (`connect-src 'self'`) + sanitasi wajib; pertimbangkan cookie HttpOnly pada Fase 8 |
+| Mock location hanya dari klien | Diterima | Tidak ada Play Integrity/App Attest; server menolak dan mencatat `CLOCK_IN_REJECTED`/`CLOCK_OUT_REJECTED` di audit log. `risk_flags` disediakan untuk anomali pada record yang diterima. |
 | Rate limiter in-memory | Diterima | Multi-instance memerlukan Redis |
 | `trust proxy = 1` | Konfigurasi | API **harus** di belakang Nginx; paparan langsung memungkinkan spoof `X-Forwarded-For` |
 | 13 advisory moderate Expo | Diterima | Toolchain; pantau upgrade SDK |
@@ -104,7 +105,24 @@ Tidak ada kerentanan **high** atau **critical** pada ketiga proyek.
 
 ---
 
-## 7. Rekomendasi Fase 8
+## 7. Perbaikan Pasca-Review (2026-11-03)
+
+| Area | Perbaikan |
+| :--- | :--- |
+| Pemilihan record mobile | Record dicocokkan dengan `workDate`, bukan hanya `shiftId` |
+| Clock-Out | Grace period `CLOCK_OUT_GRACE_MINUTES` (default 240) dan update kondisional anti-duplikasi |
+| Shift malam | Resolusi tanggal kerja diperbaiki untuk pukul 08:00 tepat dan Clock-In sebelum tengah malam |
+| Admin | Tanggal default mengikuti zona waktu kantor dari `/reports/summary` |
+| Status absensi | Finalizer menandai `INCOMPLETE` setelah shift + grace; ringkasan memiliki kategori `incomplete` |
+| Audit | Percobaan Clock-In/Out yang ditolak dicatat sebagai `*_REJECTED` |
+| Rate limit | Batas login/refresh per IP dapat dikonfigurasi untuk lonjakan pergantian shift |
+| CSP | `connect-src` dipersempit menjadi `'self'` |
+| Database | CHECK constraint dan partial unique index untuk satu lokasi/perangkat aktif |
+| Seed | Ditolak pada `NODE_ENV=production` |
+| Setup | `prisma generate` masuk dokumentasi dan script dev/seed |
+| Rilis | `bundleIdentifier`, `android.package`, dan `eas.json` ditambahkan |
+
+## 8. Rekomendasi Fase 8
 
 1. Uji restore backup di staging dan catat hasilnya.
 2. Terapkan Nginx/systemd dan ukur header/CSP di produksi.

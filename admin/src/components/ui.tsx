@@ -215,12 +215,27 @@ export function Loading({ label = 'Memuat data…' }: { label?: string }) {
   );
 }
 
-export function ErrorNotice({ message }: { message: string }) {
+export function Notice({
+  message,
+  tone = 'success',
+}: {
+  message: string;
+  tone?: 'success' | 'error';
+}) {
+  const styles =
+    tone === 'success'
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+      : 'border-red-200 bg-red-50 text-red-700';
+
   return (
-    <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+    <div className={`rounded-lg border px-3 py-2 text-sm ${styles}`}>
       {message}
     </div>
   );
+}
+
+export function ErrorNotice({ message }: { message: string }) {
+  return <Notice message={message} tone="error" />;
 }
 
 export function EmptyRow({
