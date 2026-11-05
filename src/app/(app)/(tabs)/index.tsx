@@ -8,6 +8,7 @@ import { useIsFocused } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   ScrollView,
   StyleSheet,
   View,
@@ -258,6 +259,48 @@ export default function AttendanceScreen() {
     setSuccess(null);
 
     try {
+      // Ambil lokasi baru tepat sebelum submit: flag mock location bisa
+      // berubah setelah layar pertama kali dibuka.
+      const fresh = await location.refresh();
+
+      if (!fresh) {
+        setActionError(
+          'Lokasi terbaru tidak tersedia. Perbarui lokasi lalu coba lagi.',
+        );
+        return;
+      }
+
+      if (fresh.mocked) {
+        setActionError(
+          'Mock location terdeteksi. Nonaktifkan aplikasi Fake GPS sebelum absensi.',
+        );
+        return;
+      }
+
+      if (
+        fresh.accuracy !== null &&
+        fresh.accuracy > accuracyLimitMeters
+      ) {
+        setActionError(
+          `Akurasi GPS ${Math.round(fresh.accuracy)} m, maksimal ${accuracyLimitMeters} m.`,
+        );
+        return;
+      }
+
+      if (office) {
+        const freshDistance = haversineMeters(fresh.coords, {
+          latitude: office.latitude,
+          longitude: office.longitude,
+        });
+
+        if (freshDistance > office.radiusMeters) {
+          setActionError(
+            `Anda ${Math.round(freshDistance)} m dari kantor (maks ${office.radiusMeters} m).`,
+          );
+          return;
+        }
+      }
+
       const form = new FormData();
 
       await appendFile(form, 'photo', {
@@ -266,10 +309,10 @@ export default function AttendanceScreen() {
         fileName: `selfie-${Date.now()}.jpg`,
       });
 
-      form.append('latitude', String(location.coords.latitude));
-      form.append('longitude', String(location.coords.longitude));
-      form.append('accuracy', String(location.accuracy ?? 0));
-      form.append('mocked', String(location.mocked));
+      form.append('latitude', String(fresh.coords.latitude));
+      form.append('longitude', String(fresh.coords.longitude));
+      form.append('accuracy', String(fresh.accuracy ?? 0));
+      form.append('mocked', String(fresh.mocked));
       form.append('shiftId', selectedShift.id);
 
       const path = isClockOut
@@ -490,6 +533,14 @@ export default function AttendanceScreen() {
         {location.error ? (
           <ThemedText type="small" style={{ color: theme.danger }}>
             {location.error}
+          </ThemedText>
+        ) : null}
+
+        {Platform.OS === 'web' ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            Browser tidak dapat memverifikasi mock location. Absensi lewat web
+            dinonaktifkan pada produksi; gunakan aplikasi mobile untuk absensi
+            resmi.
           </ThemedText>
         ) : null}
       </Card>

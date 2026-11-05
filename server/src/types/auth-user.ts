@@ -7,4 +7,5 @@ export type AuthUser = {
   employeeId: string | null;
   sessionId: string;
   deviceId: string | null;
+  devicePlatform: string | null;
 };

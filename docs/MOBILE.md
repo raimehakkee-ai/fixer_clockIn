@@ -63,7 +63,7 @@ Akun demo (development): `budi@clockin.test` / `Employee123!` (lihat `server/REA
 
 1. **Login** — aplikasi membuat `deviceIdentifier` (UUID di SecureStore) dan mengirimkannya. Login pertama mengikat perangkat; perangkat lain ditolak sampai Admin mereset.
 2. **Pilih shift** — aplikasi memilih shift yang sedang berjalan secara default; karyawan dapat mengganti. Jendela shift dan toleransi berasal dari server.
-3. **Lokasi** — izin lokasi diminta; aplikasi menampilkan jarak ke kantor, akurasi GPS, dan status radius. Flag `mocked` dari `expo-location` memblokir absensi.
+3. **Lokasi** — izin lokasi diminta; aplikasi menampilkan jarak ke kantor, akurasi GPS, dan status radius. Flag `mocked` dari `expo-location` (Android/iOS) memblokir absensi. Lokasi diambil ulang tepat sebelum submit agar flag tidak basi. Browser tidak menyediakan flag ini, sehingga absensi web hanya untuk UAT dan diblokir di produksi.
 4. **Selfie** — kamera depan (`CameraView`) wajib; tidak ada akses galeri. Foto dikirim multipart.
 5. **Kirim** — server tetap sumber kebenaran: radius Haversine, batas akurasi dari `accuracyLimitMeters`, mock location, jendela Clock-In, grace period Clock-Out, dan waktu server divalidasi ulang.
 6. **Hasil** — status (`Hadir`/`Terlambat`), jam server, dan jarak ditampilkan; riwayat diperbarui.
@@ -110,7 +110,7 @@ Akun demo (development): `budi@clockin.test` / `Employee123!` (lihat `server/REA
 
 ## 8. Keterbatasan
 
-1. Deteksi mock location berasal dari `LocationObject.mocked`; tidak tersedia di web dan tidak menangkap seluruh bentuk spoofing.
+1. Deteksi mock location berasal dari `LocationObject.mocked` (Android/iOS); tidak tersedia di web dan tidak menangkap seluruh bentuk spoofing. Untuk produksi, absensi web dinonaktifkan dan penguatan lanjutan memerlukan Play Integrity/App Attest.
 2. Kamera web memerlukan HTTPS/localhost dan izin browser.
 3. Selfie bukan verifikasi biometrik.
 4. Aplikasi memerlukan koneksi; tidak ada antrean absensi offline.

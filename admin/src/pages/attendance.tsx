@@ -332,6 +332,12 @@ export function AttendancePage() {
                 Mock location:{' '}
                 {detail.clockIn.mocked ? 'terdeteksi' : 'tidak terdeteksi'}
               </p>
+              <p className="sm:col-span-3">
+                Risk flags:{' '}
+                {detail.riskFlags.length > 0
+                  ? detail.riskFlags.map(String).join(', ')
+                  : '—'}
+              </p>
             </div>
           </div>
         ) : null}

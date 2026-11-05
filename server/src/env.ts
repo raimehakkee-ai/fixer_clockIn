@@ -21,6 +21,7 @@ const envSchema = z.object({
   CLOCK_OUT_GRACE_MINUTES: z.coerce.number().int().min(0).max(1440).default(240),
   LOGIN_IP_LIMIT_MAX: z.coerce.number().int().positive().default(120),
   REFRESH_LIMIT_MAX: z.coerce.number().int().positive().default(300),
+  ALLOW_WEB_ATTENDANCE: z.enum(['true', 'false']).default('false'),
   TRUST_PROXY: z.string().default('1'),
   S3_REGION: z.string().min(1).optional(),
   S3_BUCKET: z.string().min(1).optional(),

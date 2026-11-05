@@ -69,6 +69,14 @@ function requireEmployeeId(req: Request): string {
   return current.employeeId;
 }
 
+function ensureAttendancePlatformAllowed(platform: string | null): void {
+  if (platform === 'web' && env.ALLOW_WEB_ATTENDANCE !== 'true') {
+    throw ApiError.forbidden(
+      'Absensi melalui browser dinonaktifkan. Gunakan aplikasi mobile ClockIn.',
+    );
+  }
+}
+
 async function auditClockFailure(
   req: Request,
   action: 'CLOCK_IN' | 'CLOCK_OUT',
@@ -176,6 +184,8 @@ attendanceRouter.post(
         longitude: body.longitude,
         accuracy: body.accuracy,
         photo,
+        riskFlags:
+          current.devicePlatform === 'web' ? ['WEB_ATTENDANCE'] : [],
         ip: req.ip ?? null,
         now,
       });
@@ -213,6 +223,7 @@ attendanceRouter.post(
   async (req, res) => {
     const current = actor(req);
     const employeeId = requireEmployeeId(req);
+    ensureAttendancePlatformAllowed(current.devicePlatform);
     const body = clockSchema.parse(req.body);
 
     if (body.mocked) {

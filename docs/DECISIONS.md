@@ -82,6 +82,7 @@ Tanggal baseline: **2026-11-01** (Fase 0–1).
 | D-052 | Grace period Clock-Out | Clock-Out diizinkan sampai `CLOCK_OUT_GRACE_MINUTES` (default 240 menit) setelah jam selesai shift; Clock-In tetap berakhir di jam selesai | CONFIRMED (perbaikan) |
 | D-053 | Status `INCOMPLETE` | Finalizer periodik menandai record tanpa Clock-Out setelah shift + grace sebagai `INCOMPLETE`; Clock-Out dalam grace mengembalikan status `PRESENT`/`LATE` | CONFIRMED (perbaikan) |
 | D-054 | Audit percobaan absensi | Percobaan Clock-In/Out yang ditolak dicatat sebagai `CLOCK_IN_REJECTED`/`CLOCK_OUT_REJECTED`; `risk_flags` tetap disediakan untuk anomali pada record yang diterima | CONFIRMED (perbaikan) |
+| D-055 | Absensi web | Browser tidak dapat melaporkan mock location; `ALLOW_WEB_ATTENDANCE=true` hanya untuk development/UAT, produksi `false`. Record web yang diizinkan diberi `risk_flags: ["WEB_ATTENDANCE"]` | CONFIRMED (perbaikan) |
 
 ---
 

@@ -27,7 +27,7 @@ export async function authenticate(
 
     const session = await prisma.session.findUnique({
       where: { id: payload.sid },
-      include: { user: { include: { employee: true } } },
+      include: { user: { include: { employee: true } }, device: true },
     });
 
     if (
@@ -47,6 +47,7 @@ export async function authenticate(
       employeeId: session.user.employee?.id ?? null,
       sessionId: session.id,
       deviceId: session.deviceId,
+      devicePlatform: session.device?.platform ?? null,
     };
 
     next();

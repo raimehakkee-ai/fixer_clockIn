@@ -129,7 +129,7 @@ Status rilis: **Release Candidate** — sign-off dan item P1 (uji perangkat, VPS
 
 ## Keterbatasan yang Diakui
 
-- Deteksi mock location bergantung platform dan tidak tersedia di web.
+- Deteksi mock location bergantung platform (Android/iOS). Browser tidak dapat melaporkannya; absensi web diblokir di produksi melalui `ALLOW_WEB_ATTENDANCE=false`.
 - Selfie bukan verifikasi biometrik.
 - Perangkat Android/iOS nyata belum diuji di lingkungan pengembangan ini.
 - UI mobile dan Web Admin belum diuji visual di browser (tidak ada browser pada lingkungan ini); bundling/typecheck sudah divalidasi.

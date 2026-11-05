@@ -29,6 +29,7 @@ export type ClockInput = {
   longitude: number;
   accuracy: number;
   photo: ClockPhoto;
+  riskFlags?: string[];
   ip?: string | null;
   now: Date;
 };
@@ -149,6 +150,7 @@ export async function clockIn(input: ClockInput) {
         clockInIp: input.ip ?? null,
         status: lateMinutes > 0 ? 'LATE' : 'PRESENT',
         lateMinutes,
+        riskFlags: input.riskFlags ?? [],
       },
       include: { shift: true },
     });

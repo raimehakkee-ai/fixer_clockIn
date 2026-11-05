@@ -298,7 +298,7 @@ dengan server.
 }
 ```
 
-Penolakan: `422 MOCK_LOCATION`, `422 LOW_ACCURACY`, `422 OUT_OF_RANGE`, `422 INVALID_SHIFT`, `422 OUTSIDE_SHIFT_WINDOW`, `409 ALREADY_CLOCKED_IN`, `400` foto tidak ada/bukan gambar, `413` file melebihi batas.
+Penolakan: `422 MOCK_LOCATION`, `422 LOW_ACCURACY`, `422 OUT_OF_RANGE`, `422 INVALID_SHIFT`, `422 OUTSIDE_SHIFT_WINDOW`, `409 ALREADY_CLOCKED_IN`, `400` foto tidak ada/bukan gambar, `413` file melebihi batas. Jika `ALLOW_WEB_ATTENDANCE=false`, sesi yang terikat perangkat `web` ditolak `403 FORBIDDEN`; record web yang diizinkan pada UAT diberi `riskFlags: ["WEB_ATTENDANCE"]`.
 
 ### `POST /attendance/clock-out`
 

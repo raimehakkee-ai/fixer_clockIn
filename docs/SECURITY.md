@@ -27,7 +27,7 @@
 
 | Ancaman | Dampak | Kontrol |
 | :--- | :--- | :--- |
-| Fake GPS / mock location | Absensi dari lokasi palsu | `LocationObject.mocked` di klien + penolakan server + audit `CLOCK_IN_REJECTED`/`CLOCK_OUT_REJECTED`; `risk_flags` untuk anomali pada record yang diterima |
+| Fake GPS / mock location | Absensi dari lokasi palsu | `LocationObject.mocked` (Android/iOS) di klien + penolakan server + audit `CLOCK_IN_REJECTED`/`CLOCK_OUT_REJECTED`; `risk_flags` untuk anomali pada record yang diterima. Browser tidak dapat melaporkan mock location, sehingga absensi web diblokir di produksi (`ALLOW_WEB_ATTENDANCE=false`). |
 | Replay request absensi | Absensi ganda | Unique `(employee, work_date, shift)` + validasi status + idempotency key |
 | Manipulasi waktu perangkat | Jam absensi palsu | Timestamp hanya dari server; waktu klien diabaikan |
 | Manipulasi koordinat/jarak | Absensi di luar radius | Server menghitung Haversine dari konfigurasi kantor |
