@@ -20,7 +20,7 @@
 | Mobile typecheck/lint/doctor/export | Lulus (Fase 5b; kode mobile tidak berubah) |
 | `npm audit` produksi — server | **0 kerentanan** |
 | `npm audit` produksi — admin | **0 kerentanan** |
-| `npm audit` produksi — root (Expo) | 13 moderate, 0 high/critical |
+| `npm audit` produksi — root (Expo) | 12 moderate, 0 high/critical |
 
 ---
 
@@ -30,7 +30,7 @@
 | :--- | :--- | :--- | :--- |
 | `server/` | 9 moderate (semua dari `exceljs` → archiver/glob/minimatch/uuid) | **0** | `exceljs` diganti penulis XLSX minimal berbasis `fflate` |
 | `admin/` | 0 | **0** | — |
-| root (Expo) | 13 moderate | 13 moderate | Sebagian besar toolchain Expo/CLI; perbaikan yang ditawarkan berupa perubahan major/downgrade yang berisiko. Dipantau melalui upgrade SDK. |
+| root (Expo) | 12 moderate | 12 moderate | Sebagian besar toolchain Expo/CLI; perbaikan yang ditawarkan berupa perubahan major/downgrade yang berisiko. Dipantau melalui upgrade SDK. |
 
 Tidak ada kerentanan **high** atau **critical** pada ketiga proyek.
 
@@ -75,7 +75,7 @@ Tidak ada kerentanan **high** atau **critical** pada ketiga proyek.
 | Mock location hanya dari klien | Diterima | Tidak ada Play Integrity/App Attest; server menolak dan mencatat `CLOCK_IN_REJECTED`/`CLOCK_OUT_REJECTED` di audit log. `risk_flags` disediakan untuk anomali pada record yang diterima. |
 | Rate limiter in-memory | Diterima | Multi-instance memerlukan Redis |
 | `trust proxy = 1` | Konfigurasi | API **harus** di belakang Nginx; paparan langsung memungkinkan spoof `X-Forwarded-For` |
-| 13 advisory moderate Expo | Diterima | Toolchain; pantau upgrade SDK |
+| 12 advisory moderate Expo | Diterima | Toolchain; pantau upgrade SDK |
 | Uji UI browser | Belum | Tidak ada browser/agent-browser; build & route tervalidasi |
 | Uji perangkat Android/iOS | Belum | Kamera/GPS/mock asli tidak dapat diuji di sini |
 | Backup & restore | **Belum diuji** | `pg_dump`/`psql` tidak tersedia; jangan klaim berhasil |
@@ -100,7 +100,7 @@ Tidak ada kerentanan **high** atau **critical** pada ketiga proyek.
 | Backup + uji restore | ❌ belum dieksekusi |
 | Log bebas token/password | ✅ (desain + audit) |
 | Prosedur reset perangkat | ✅ |
-| `npm audit` | ✅ server/admin 0; root 13 moderate |
+| `npm audit` | ✅ server/admin 0; root 12 moderate |
 | Retensi data disetujui | ❌ OPEN-12 |
 
 ---

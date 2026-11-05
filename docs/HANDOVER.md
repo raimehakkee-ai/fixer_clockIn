@@ -82,7 +82,7 @@ Akun demo: `admin@clockin.test / Admin123!`, `budi@clockin.test / Employee123!`.
 | Admin `tsc --noEmit` + build | Lulus |
 | Production smoke (simulasi lokal) | **13/13 lulus** |
 | Health tanpa DB | `503 {ok:false, db:"error"}` |
-| Audit dependensi produksi | server 0, admin 0, root 13 moderate (Expo) |
+| Audit dependensi produksi | server 0, admin 0, root 12 moderate (Expo) |
 
 ---
 
