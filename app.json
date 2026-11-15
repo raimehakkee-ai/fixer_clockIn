@@ -54,7 +54,9 @@
         {
           "locationWhenInUsePermission": "Izinkan ClockIn menggunakan lokasi Anda untuk memvalidasi radius kantor saat absensi."
         }
-      ]
+      ],
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
