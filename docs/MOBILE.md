@@ -62,7 +62,7 @@ Akun demo (development): `budi@clockin.test` / `Employee123!` (lihat `server/REA
 ## 4. Alur Absensi
 
 1. **Login** — aplikasi membuat `deviceIdentifier` (UUID di SecureStore) dan mengirimkannya. Login pertama mengikat perangkat; perangkat lain ditolak sampai Admin mereset.
-2. **Pilih shift** — aplikasi memilih shift yang sedang berjalan secara default; karyawan dapat mengganti. Jendela shift dan toleransi berasal dari server.
+2. **Pilih shift** — aplikasi memilih shift yang jendela Clock-In-nya sedang terbuka (termasuk `earlyWindowMinutes`) secara default; karyawan dapat mengganti. Jendela shift dan toleransi berasal dari server.
 3. **Lokasi** — izin lokasi diminta; aplikasi menampilkan jarak ke kantor, akurasi GPS, dan status radius. Flag `mocked` dari `expo-location` (Android/iOS) memblokir absensi. Lokasi diambil ulang tepat sebelum submit agar flag tidak basi. Browser tidak menyediakan flag ini, sehingga absensi web hanya untuk UAT dan diblokir di produksi.
 4. **Selfie** — kamera depan (`CameraView`) wajib; tidak ada akses galeri. Foto dikirim multipart.
 5. **Kirim** — server tetap sumber kebenaran: radius Haversine, batas akurasi dari `accuracyLimitMeters`, mock location, jendela Clock-In, grace period Clock-Out, dan waktu server divalidasi ulang.
@@ -97,7 +97,7 @@ Akun demo (development): `budi@clockin.test` / `Employee123!` (lihat `server/REA
 
 | Pemeriksaan | Hasil |
 | :--- | :--- |
-| `npm test` | 9 unit test logika tanggal kerja & window |
+| `npm test` | 11 unit test logika tanggal kerja, window, dan pemilihan shift |
 | `npx tsc --noEmit` | Lulus |
 | `npx expo lint` | Lulus (0 error/warning) |
 | `npx expo-doctor` | 20/20 pemeriksaan lulus |

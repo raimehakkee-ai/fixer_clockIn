@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { findAttendanceRecord } from './attendance';
 import {
+  isShiftActiveNow,
   isWithinClockOutWindow,
   isWithinShiftWindow,
   resolveClockOutWorkDate,
@@ -101,5 +102,21 @@ describe('resolusi tanggal kerja mobile', () => {
     expect(
       isWithinClockOutWindow(at('2026-11-02T01:00:00Z'), night, TZ, 240),
     ).toBe(true);
+  });
+});
+
+describe('isShiftActiveNow', () => {
+  it('menghitung shift aktif selama jendela Clock-In lebih awal', () => {
+    // 07:30 Jakarta, shift 08:00-15:00 dengan early window 120 menit.
+    expect(isShiftActiveNow(at('2026-11-01T00:30:00Z'), morning, TZ)).toBe(
+      true,
+    );
+  });
+
+  it('tetap tidak aktif di luar jendela Clock-In', () => {
+    // 05:00 Jakarta, tiga jam sebelum shift dimulai.
+    expect(isShiftActiveNow(at('2026-10-31T22:00:00Z'), morning, TZ)).toBe(
+      false,
+    );
   });
 });

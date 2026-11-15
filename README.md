@@ -71,7 +71,7 @@ npm run lint
 
 # Backend (server harus berjalan untuk smoke)
 cd server
-npm test          # 98 unit test
+npm test          # 100 unit test
 npm run smoke     # 151 pemeriksaan integrasi (auth, admin, absensi, izin, laporan)
 npm run smoke:security  # 41 pemeriksaan keamanan (jalankan pada server baru di-restart)
 
@@ -81,7 +81,7 @@ npm run build     # typecheck + vite build
 ```
 
 Hasil terakhir: typecheck mobile & admin lulus, lint lulus, `expo-doctor` 20/20,
-export web mobile berhasil, build admin berhasil, 9 unit test mobile + 98 unit test
+export web mobile berhasil, build admin berhasil, 11 unit test mobile + 100 unit test
 backend + 151 smoke test + 41 security check lulus, audit dependensi server/admin
 0 kerentanan, production smoke (simulasi lokal) 13/13 lulus.
 

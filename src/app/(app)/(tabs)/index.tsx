@@ -226,8 +226,8 @@ export default function AttendanceScreen() {
       return `Anda ${distance ? Math.round(distance) : '-'} m dari kantor (maks ${office.radiusMeters} m).`;
     }
     if (!selectedShift) return 'Pilih shift terlebih dahulu.';
-    if (!withinWindow) return 'Di luar jendela shift yang dipilih.';
     if (completed) return 'Absensi shift ini sudah lengkap.';
+    if (!withinWindow) return 'Di luar jendela shift yang dipilih.';
     return null;
   })();
 
@@ -538,9 +538,8 @@ export default function AttendanceScreen() {
 
         {Platform.OS === 'web' ? (
           <ThemedText type="small" themeColor="textSecondary">
-            Browser tidak dapat memverifikasi mock location. Absensi lewat web
-            dinonaktifkan pada produksi; gunakan aplikasi mobile untuk absensi
-            resmi.
+            Browser tidak dapat memverifikasi mock location. Gunakan aplikasi
+            mobile untuk absensi resmi.
           </ThemedText>
         ) : null}
       </Card>

@@ -72,16 +72,6 @@ export function addDaysToDateString(dateString: string, days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-export function minutesSinceShiftStart(
-  at: Date,
-  shift: Pick<ShiftWindow, 'startTime'>,
-  timeZone: string,
-): number {
-  const local = officeMinutesOfDay(at, timeZone);
-  const start = parseHhMm(shift.startTime);
-  return (((local - start) % 1440) + 1440) % 1440;
-}
-
 function dateStringToEpochDay(dateString: string): number {
   const [yearPart, monthPart, dayPart] = dateString.split('-');
   return Math.floor(
@@ -102,7 +92,7 @@ export function resolveShiftOccurrence(
     'startTime' | 'endTime' | 'earlyWindowMinutes'
   >,
   timeZone: string,
-  options: { graceMinutes?: number; allowEarly?: boolean } = {},
+  options: { graceMinutes?: number } = {},
 ): ShiftOccurrence | null {
   const localDate = officeDateString(at, timeZone);
   const localMinutes = officeMinutesOfDay(at, timeZone);
@@ -110,9 +100,7 @@ export function resolveShiftOccurrence(
   const startMinutes = parseHhMm(shift.startTime);
   const duration = shiftDurationMinutes(shift);
   const grace = Math.max(0, options.graceMinutes ?? 0);
-  const early = (options.allowEarly ?? true)
-    ? shift.earlyWindowMinutes
-    : 0;
+  const early = shift.earlyWindowMinutes;
   const maxLate = duration + grace;
 
   let best: (ShiftOccurrence & { score: number }) | null = null;
@@ -195,6 +183,7 @@ export function isShiftActiveNow(
   shift: ShiftWindow,
   timeZone: string,
 ): boolean {
-  const relative = minutesSinceShiftStart(at, shift, timeZone);
-  return relative <= shiftDurationMinutes(shift);
+  // "Aktif" mengikuti jendela Clock-In, termasuk earlyWindowMinutes, agar
+  // shift yang sebentar lagi dimulai ikut dipertimbangkan sebagai default.
+  return isWithinShiftWindow(at, shift, timeZone);
 }

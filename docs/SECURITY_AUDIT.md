@@ -12,12 +12,12 @@
 
 | Pemeriksaan | Hasil |
 | :--- | :--- |
-| Unit test backend | **98/98 lulus** (12 file) |
-| Unit test mobile | **9/9 lulus** (logika tanggal kerja & window) |
+| Unit test backend | **100/100 lulus** (12 file) |
+| Unit test mobile | **11/11 lulus** (logika tanggal kerja, window, dan pemilihan shift) |
 | Smoke API (auth/admin/absensi/izin/laporan) | **151/151 lulus** |
 | Security smoke | **41/41 lulus** |
 | Web Admin build + CSP meta | **Lulus** |
-| Mobile typecheck/lint/doctor/export | Lulus (termasuk perubahan absensi, lokasi, dan izin; 9 unit test) |
+| Mobile typecheck/lint/doctor/export | Lulus (termasuk perubahan absensi, lokasi, dan izin; 11 unit test) |
 | `npm audit` produksi — server | **0 kerentanan** |
 | `npm audit` produksi — admin | **0 kerentanan** |
 | `npm audit` produksi — root (Expo) | 3 moderate, 0 high/critical |

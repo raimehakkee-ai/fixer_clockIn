@@ -94,11 +94,22 @@ export function addDaysToDateString(dateString: string, days: number): string {
 
 export function dateStringToEpochDay(dateString: string): number {
   const [year, month, day] = dateString.split('-').map(Number);
-  if (!year || !month || !day) {
+  if (!year || !month || !day || month > 12) {
     throw new Error(`Tanggal tidak valid: ${dateString}`);
   }
 
-  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
+  const timestamp = Date.UTC(year, month - 1, day);
+  const parsed = new Date(timestamp);
+
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    throw new Error(`Tanggal tidak valid: ${dateString}`);
+  }
+
+  return Math.floor(timestamp / 86_400_000);
 }
 
 /** Menit berlalu sejak jam mulai shift, dinormalisasi ke 0..1439. */
@@ -121,11 +132,6 @@ export type ShiftOccurrence = {
 export type ShiftOccurrenceOptions = {
   /** Menit tambahan setelah jam selesai shift (khusus Clock-Out). */
   graceMinutes?: number;
-  /**
-   * Izinkan waktu sebelum jam mulai shift selama earlyWindowMinutes.
-   * Default true agar perilaku Clock-In yang sudah ada tidak berubah.
-   */
-  allowEarly?: boolean;
 };
 
 /**
@@ -150,8 +156,7 @@ export function resolveShiftOccurrence(
   const startMinutes = parseHhMm(shift.startTime);
   const duration = shiftDurationMinutes(shift);
   const grace = Math.max(0, options.graceMinutes ?? 0);
-  const allowEarly = options.allowEarly ?? true;
-  const early = allowEarly ? shift.earlyWindowMinutes : 0;
+  const early = shift.earlyWindowMinutes;
   const maxLate = duration + grace;
 
   let best: (ShiftOccurrence & { score: number }) | null = null;

@@ -7,7 +7,7 @@ on:
 
 jobs:
   mobile:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -23,7 +23,7 @@ jobs:
       - run: npx expo export --platform web
 
   server:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: server
@@ -42,7 +42,7 @@ jobs:
       - run: npm test
 
   server-integration:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:16
@@ -103,7 +103,7 @@ jobs:
       - run: npm run smoke:security
 
   admin:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: admin

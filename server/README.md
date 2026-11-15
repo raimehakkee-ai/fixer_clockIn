@@ -53,7 +53,7 @@ Laporan & audit (Fase 6a):
 - Audit `CLOCK_IN_REJECTED`/`CLOCK_OUT_REJECTED` untuk percobaan yang ditolak.
 - Constraint database untuk radius, jam shift, tanggal izin, dan satu perangkat aktif.
 
-Total pengujian: 98 unit test backend + 9 unit test mobile, 18 smoke auth, 41 smoke admin, 31 smoke absensi, 30 smoke izin, 31 smoke laporan, 41 security check.
+Total pengujian: 100 unit test backend + 11 unit test mobile, 18 smoke auth, 41 smoke admin, 31 smoke absensi, 30 smoke izin, 31 smoke laporan, 41 security check.
 Audit dependensi produksi: **0 kerentanan** (setelah `exceljs` diganti penulis XLSX berbasis `fflate`).
 
 Belum tersedia (fase berikutnya): deployment produksi (Nginx, HTTPS, backup teruji).

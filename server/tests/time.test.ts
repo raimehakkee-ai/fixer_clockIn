@@ -4,6 +4,7 @@ import {
   addDaysToDateString,
   computeLateMinutes,
   crossesMidnight,
+  dateStringToEpochDay,
   formatHhMm,
   isPastShiftEnd,
   isWithinClockOutWindow,
@@ -230,6 +231,22 @@ describe('resolveShiftOccurrence', () => {
 
     expect(occurrence?.workDate).toBe('2026-11-01');
     expect(occurrence?.relativeMinutes).toBe(450);
+  });
+});
+
+describe('dateStringToEpochDay', () => {
+  it('mengonversi tanggal valid', () => {
+    expect(dateStringToEpochDay('1970-01-01')).toBe(0);
+    expect(dateStringToEpochDay('2026-11-01')).toBe(
+      Math.floor(Date.UTC(2026, 10, 1) / 86_400_000),
+    );
+  });
+
+  it('menolak tanggal yang tidak ada, bukan menggulirkannya', () => {
+    expect(() => dateStringToEpochDay('2026-13-01')).toThrow();
+    expect(() => dateStringToEpochDay('2026-02-31')).toThrow();
+    expect(() => dateStringToEpochDay('2026-00-10')).toThrow();
+    expect(() => dateStringToEpochDay('bukan-tanggal')).toThrow();
   });
 });
 
