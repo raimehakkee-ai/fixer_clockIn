@@ -88,7 +88,8 @@ Isi `.env.production` (contoh ada di repository):
 - `STORAGE_DRIVER=s3` + kredensial bucket privat.
 - `TRUST_PROXY=1`.
 - `CLOCK_OUT_GRACE_MINUTES=240` (sesuaikan kebijakan absensi).
-- `LOGIN_IP_LIMIT_MAX` dan `REFRESH_LIMIT_MAX` bila banyak karyawan berbagi NAT.
+- `LOGIN_IP_LIMIT_MAX` dan `REFRESH_LIMIT_MAX` bila banyak karyawan berbagi NAT
+  (default aplikasi 30/60 per 15 menit).
 
 Migrasi dan buat Admin pertama (jangan memakai seed demo di produksi):
 

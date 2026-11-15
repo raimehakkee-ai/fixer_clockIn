@@ -42,7 +42,7 @@ Tidak ada kerentanan **high** atau **critical** pada ketiga proyek.
 | :--- | :--- | :--- | :--- |
 | 1 | Body JSON > 1 MB menghasilkan `500` | Kebingungan/indikasi error internal | Error handler memetakan `413` ke `VALIDATION_ERROR` |
 | 2 | Waktu respons login berbeda untuk email tidak dikenal | Enumerasi akun | Bcrypt dummy dijalankan untuk email tidak dikenal |
-| 3 | Rate limit login hanya per email | Rotasi email dapat mengakali limit | Ditambah limit per IP (default 120/15 menit, dapat diatur lewat `LOGIN_IP_LIMIT_MAX`) |
+| 3 | Rate limit login hanya per email | Rotasi email dapat mengakali limit | Ditambah limit per IP (default 30/15 menit, dapat dinaikkan lewat `LOGIN_IP_LIMIT_MAX`) |
 | 4 | `exceljs` membawa 9 advisory moderate | Risiko rantai pasok | Diganti penulis XLSX minimal (`fflate`), nilai inline string/angka, tanpa parser eksternal |
 | 5 | Web Admin belum memiliki CSP | Risiko XSS pada token localStorage | CSP di-inject saat build + snippet header Nginx |
 | 6 | Belum ada artefak deployment/backup | Risiko operasional | `infra/nginx`, `infra/systemd`, skrip backup/restore, CI |
@@ -115,7 +115,7 @@ Tidak ada kerentanan **high** atau **critical** pada ketiga proyek.
 | Admin | Tanggal default mengikuti zona waktu kantor dari `/reports/summary` |
 | Status absensi | Finalizer menandai `INCOMPLETE` setelah shift + grace (batch 1.000 baris, anti-tumpang-tindih); ringkasan memiliki kategori `incomplete` |
 | Audit | Percobaan Clock-In/Out yang ditolak dicatat sebagai `*_REJECTED` |
-| Rate limit | Batas login/refresh per IP dapat dikonfigurasi untuk lonjakan pergantian shift |
+| Rate limit | Default login/refresh per IP 30/60; dinaikkan lewat env untuk lonjakan pergantian shift di jaringan NAT |
 | CSP | `connect-src` dipersempit menjadi `'self'` |
 | Database | CHECK constraint dan partial unique index untuk satu lokasi/perangkat aktif |
 | Seed | Ditolak di luar `NODE_ENV=development` kecuali `ALLOW_DEMO_SEED=true` |

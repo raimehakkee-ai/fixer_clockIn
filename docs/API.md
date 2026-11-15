@@ -72,8 +72,8 @@
 
 | Endpoint | Batas |
 | :--- | :--- |
-| `POST /auth/login` | 10 / 15 menit per IP+email, 120 / 15 menit per IP |
-| `POST /auth/refresh` | 300 / 15 menit per IP |
+| `POST /auth/login` | 10 / 15 menit per IP+email, 30 / 15 menit per IP (default) |
+| `POST /auth/refresh` | 60 / 15 menit per IP (default) |
 | `POST /attendance/clock-in` / `clock-out` | 20 / jam per karyawan |
 | `POST /leave-requests` | 10 / hari per karyawan |
 | Ekspor laporan | 10 / jam per Admin |

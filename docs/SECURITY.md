@@ -102,7 +102,7 @@
 - `helmet` (CSP, HSTS di produksi, `nosniff`, frame deny).
 - CORS allow-list dari environment; tidak memakai `*` dengan kredensial.
 - Body JSON maksimum 1 MB; multipart 5 MB.
-- Rate limit pada login, refresh, absensi, pengajuan, dan ekspor; batas login/refresh per IP dapat dikonfigurasi agar tidak memblokir pergantian shift di jaringan NAT kantor.
+- Rate limit pada login, refresh, absensi, pengajuan, dan ekspor; default login/refresh per IP 30/60 per 15 menit dan dapat dinaikkan lewat env bila banyak karyawan berbagi satu NAT kantor.
 - Validasi seluruh input (Zod) termasuk query dan parameter path.
 - Prisma/parameterized query; tidak ada SQL string concatenation.
 - Error produksi tanpa stack trace; `requestId` untuk korelasi.
