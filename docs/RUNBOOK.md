@@ -123,6 +123,10 @@ API menandai record yang sudah melewati jam selesai shift +
 - sekali saat API mulai berjalan, dan
 - setiap 60 detik selama API hidup.
 
+Satu putaran tidak tumpang tindih: bila putaran sebelumnya belum selesai,
+jadwal berikutnya dilewati. Record diproses per 1.000 baris (maksimal 20 batch
+per putaran), sehingga penumpukan lebih dari satu batch tetap tertangani.
+
 Job ini berjalan di dalam proses API. Bila API mati lebih lama dari jendela
 tersebut, jalankan manual (idempoten, aman diulang):
 

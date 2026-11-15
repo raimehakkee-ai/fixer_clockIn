@@ -12,7 +12,7 @@
 
 | Pemeriksaan | Hasil |
 | :--- | :--- |
-| Unit test backend | **94/94 lulus** (11 file) |
+| Unit test backend | **98/98 lulus** (12 file) |
 | Unit test mobile | **9/9 lulus** (logika tanggal kerja & window) |
 | Smoke API (auth/admin/absensi/izin/laporan) | **151/151 lulus** |
 | Security smoke | **41/41 lulus** |
@@ -113,7 +113,7 @@ Tidak ada kerentanan **high** atau **critical** pada ketiga proyek.
 | Clock-Out | Grace period `CLOCK_OUT_GRACE_MINUTES` (default 240) dan update kondisional anti-duplikasi |
 | Shift malam | Resolusi tanggal kerja diperbaiki untuk pukul 08:00 tepat dan Clock-In sebelum tengah malam |
 | Admin | Tanggal default mengikuti zona waktu kantor dari `/reports/summary` |
-| Status absensi | Finalizer menandai `INCOMPLETE` setelah shift + grace; ringkasan memiliki kategori `incomplete` |
+| Status absensi | Finalizer menandai `INCOMPLETE` setelah shift + grace (batch 1.000 baris, anti-tumpang-tindih); ringkasan memiliki kategori `incomplete` |
 | Audit | Percobaan Clock-In/Out yang ditolak dicatat sebagai `*_REJECTED` |
 | Rate limit | Batas login/refresh per IP dapat dikonfigurasi untuk lonjakan pergantian shift |
 | CSP | `connect-src` dipersempit menjadi `'self'` |

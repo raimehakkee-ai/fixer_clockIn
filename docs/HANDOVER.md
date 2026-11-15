@@ -34,7 +34,7 @@ React 19 + Tailwind 4 (admin). Detail: `docs/ARCHITECTURE.md`.
 | Area | Lokasi | Status |
 | :--- | :--- | :--- |
 | Mobile karyawan | `src/` | Selesai (belum uji perangkat) |
-| API | `server/` | Selesai, 94 unit backend + 9 unit mobile + 151 smoke + 41 security |
+| API | `server/` | Selesai, 98 unit backend + 9 unit mobile + 151 smoke + 41 security |
 | Web Admin | `admin/` | Selesai, build produksi lulus |
 | Dokumentasi | `docs/` | Lengkap |
 | Infrastruktur | `infra/` | Artefak siap, belum dieksekusi di VPS |
@@ -75,7 +75,7 @@ Akun demo: `admin@clockin.test / Admin123!`, `budi@clockin.test / Employee123!`.
 | `expo-doctor` | 20/20 lulus |
 | Mobile `expo export --platform web` | Berhasil (semua route) |
 | Server `tsc --noEmit` | Lulus |
-| Server unit test | **94/94 lulus** |
+| Server unit test | **98/98 lulus** |
 | Mobile unit test | **9/9 lulus** |
 | Smoke API | **151/151 lulus** |
 | Security smoke | **41/41 lulus** |

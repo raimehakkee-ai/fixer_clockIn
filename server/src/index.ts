@@ -1,7 +1,7 @@
 import { createApp } from './app';
 import { prisma } from './db';
 import { env } from './env';
-import { finalizeOpenAttendance } from './services/attendance-finalize-service';
+import { startAttendanceFinalizer } from './services/attendance-finalize-service';
 
 const app = createApp();
 const server = app.listen(env.PORT, () => {
@@ -25,16 +25,7 @@ const server = app.listen(env.PORT, () => {
   }
 });
 
-void finalizeOpenAttendance().catch((error) => {
-  console.error('[attendance] gagal finalisasi record terbuka', error);
-});
-
-const finalizeTimer = setInterval(() => {
-  void finalizeOpenAttendance().catch((error) => {
-    console.error('[attendance] gagal finalisasi record terbuka', error);
-  });
-}, 60_000);
-finalizeTimer.unref();
+const finalizeTimer = startAttendanceFinalizer();
 
 let shuttingDown = false;
 

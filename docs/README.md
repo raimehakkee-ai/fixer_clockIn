@@ -47,7 +47,7 @@ Indeks dokumen dan statusnya per **2026-11-01**.
 | 5 — Aplikasi mobile | Selesai (Fase 5b) — login/perangkat, absen + kamera, riwayat, izin, profil |
 | 6a — API laporan & audit | Selesai — ringkasan harian, ekspor CSV/XLSX, audit log; 31 smoke test |
 | 6 — Web Admin | Selesai (Fase 6b) — dashboard, monitoring + foto, approval, karyawan, lokasi/shift, laporan, audit |
-| 7 — Pengujian & keamanan | Selesai (otomatis) — 94 unit backend + 9 unit mobile, 151 smoke API, 41 security check, audit dependensi; backup/restore belum diuji |
+| 7 — Pengujian & keamanan | Selesai (otomatis) — 98 unit backend + 9 unit mobile, 151 smoke API, 41 security check, audit dependensi; backup/restore belum diuji |
 | 8 — Deployment | Selesai (simulasi lokal) — artefak Nginx/systemd, build statis + proxy, production smoke 13/13; VPS/TLS & restore belum dieksekusi |
 | 9 — Serah terima | Selesai — paket dokumentasi, panduan, runbook, traceability; sign-off menunggu |
 
