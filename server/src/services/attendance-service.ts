@@ -227,8 +227,19 @@ export async function clockOut(input: ClockInput) {
     });
 
     if (fallback) {
-      record = fallback;
-      workDateString = fallback.workDate.toISOString().slice(0, 10);
+      // Fallback hanya boleh menutup record milik kemunculan shift yang sama.
+      // Tanpa ini, Clock-Out hari ini bisa menutup record kemarin yang
+      // terlupakan, dan earlyLeaveMinutes dihitung dari jam yang salah.
+      const fallbackOccurrence = resolveShiftOccurrence(
+        fallback.clockInAt,
+        shift,
+        office.timezone,
+      );
+
+      if (fallbackOccurrence?.workDate === occurrence.workDate) {
+        record = fallback;
+        workDateString = fallback.workDate.toISOString().slice(0, 10);
+      }
     }
   }
 

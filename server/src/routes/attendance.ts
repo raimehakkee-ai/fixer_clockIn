@@ -148,6 +148,7 @@ attendanceRouter.post(
   async (req, res) => {
     const current = actor(req);
     const employeeId = requireEmployeeId(req);
+    ensureAttendancePlatformAllowed(current.devicePlatform);
     const body = clockSchema.parse(req.body);
 
     if (body.mocked) {
