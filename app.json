@@ -61,6 +61,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b83e0cc3-4421-4cd8-a110-58862680576c"
+      }
+    },
+    "owner": "dfixers-team"
   }
 }
