@@ -74,7 +74,7 @@ Tanggal baseline: **2026-11-01** (Fase 0–1).
 | D-044 | Media privat di web | Foto/lampiran diambil sebagai blob dengan Bearer token dan object URL sementara; tidak ada URL publik | CONFIRMED (Fase 6b) |
 | D-045 | CSP Web Admin | CSP di-inject saat build + header Nginx; `script-src 'self'`, `object-src 'none'`, `frame-ancestors 'none'` | CONFIRMED (Fase 7) |
 | D-046 | Penulis XLSX | Menghapus `exceljs` (9 advisory moderate) dan memakai penulis XLSX minimal berbasis `fflate`; audit server menjadi 0 | CONFIRMED (Fase 7) |
-| D-047 | Anti-enumerasi login | Bcrypt dummy untuk email tidak dikenal + limit login per IP 30/15 menit di samping limit per email | CONFIRMED (Fase 7) |
+| D-047 | Anti-enumerasi login | Bcrypt dummy untuk email tidak dikenal + limit login per IP 120/15 menit (`LOGIN_IP_LIMIT_MAX`) di samping limit per email | CONFIRMED (Fase 7) |
 | D-048 | Health check | `/health` memverifikasi koneksi database; `503` bila DB gagal, `ok:true` + `db:"ok"` bila sehat | CONFIRMED (Fase 8) |
 | D-049 | Trust proxy | `TRUST_PROXY` dapat dikonfigurasi; produksi memakai `1` karena API hanya diakses via Nginx | CONFIRMED (Fase 8) |
 | D-050 | Bootstrap Admin produksi | Admin pertama dibuat via `npm run admin:create` (bukan seed demo); seed demo hanya untuk development | CONFIRMED (Fase 8) |

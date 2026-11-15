@@ -140,5 +140,5 @@ Status rilis: **Release Candidate** — sign-off dan item P1 (uji perangkat, VPS
   penugasan shift per karyawan; angka ini tidak boleh dipakai untuk payroll.
 - Dashboard harian memakai `work_date` (tanggal mulai shift), sehingga shift malam
   yang sedang berjalan setelah tengah malam tampil pada tanggal sebelumnya.
-- Backup/restore belum diuji (lihat `docs/BACKUP.md`); `npm audit` root masih 12 moderate dari toolchain Expo.
-- 12 advisory moderate Expo belum diperbaiki karena perbaikannya berupa perubahan major/downgrade.
+- Backup/restore belum diuji (lihat `docs/BACKUP.md`); `npm audit` root masih 3 moderate pada dependensi produksi (10 termasuk devDependencies) dari toolchain Expo.
+- Advisory moderate Expo belum diperbaiki karena perbaikannya berupa perubahan major/downgrade.

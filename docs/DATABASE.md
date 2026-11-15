@@ -285,8 +285,8 @@ Data absensi tidak dihapus; koreksi dilakukan melalui fitur koreksi Admin di fas
 - Migrasi `20261103000000_integrity_constraints` menambahkan CHECK constraint,
   partial unique index satu lokasi aktif, dan satu perangkat aktif per karyawan.
 - Seed hanya untuk development/demo, idempoten (`upsert`), berisi Admin, 3
-  karyawan, 1 kantor, dan 3 shift. Seed menolak berjalan pada
-  `NODE_ENV=production`.
+  karyawan, 1 kantor, dan 3 shift. Seed menolak berjalan bila `NODE_ENV` bukan
+  `development`, kecuali `ALLOW_DEMO_SEED=true` (mis. untuk database uji lokal).
 - Backup: `pg_dump` harian, retensi 30 hari, salinan di lokasi terpisah; uji restore bulanan.
 - Object storage: versioning aktif; retensi foto sesuai **OPEN-12**.
 

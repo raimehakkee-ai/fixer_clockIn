@@ -115,7 +115,9 @@ npm run dev                    # http://localhost:4000/api/v1
 | `npm test` | Unit test (Vitest) |
 | `npm run db:migrate` | Buat/terapkan migrasi (dev) |
 | `npm run db:deploy` | Terapkan migrasi (produksi/staging) |
-| `npm run db:seed` | Seed data demo |
+| `npm run db:seed` | Seed data demo (hanya `development`/`ALLOW_DEMO_SEED=true`) |
+| `npm run staging:bootstrap` | Bootstrap kantor + shift staging tanpa akun demo |
+| `npm run attendance:finalize` | Tandai record tanpa Clock-Out sebagai `INCOMPLETE` (manual, idempoten) |
 | `npm run admin:create -- <email> <password>` | Buat/ubah Admin produksi (tanpa data demo) |
 | `npm run db:studio` | Prisma Studio |
 | `npm run db:local` | `prisma dev --detach` |

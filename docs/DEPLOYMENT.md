@@ -115,6 +115,11 @@ Unit systemd membaca `EnvironmentFile=/opt/clockin/server/.env.production`
 
 Health harus `{ "ok": true, "db": "ok" }`. Bila `503`, periksa `journalctl -u clockin-api`.
 
+Status `INCOMPLETE` diisi otomatis oleh API (saat start, lalu setiap 60 detik)
+setelah jam selesai shift + `CLOCK_OUT_GRACE_MINUTES`. Bila API sempat berhenti
+lebih lama, jalankan manual: `cd /opt/clockin/server && npm run attendance:finalize`
+(idempoten). Detail: [RUNBOOK §9](./RUNBOOK.md#9-finalisasi-absensi-incomplete).
+
 ---
 
 ## 5. Web Admin

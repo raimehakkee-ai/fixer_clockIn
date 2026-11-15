@@ -17,10 +17,10 @@
 | Smoke API (auth/admin/absensi/izin/laporan) | **151/151 lulus** |
 | Security smoke | **41/41 lulus** |
 | Web Admin build + CSP meta | **Lulus** |
-| Mobile typecheck/lint/doctor/export | Lulus (Fase 5b; kode mobile tidak berubah) |
+| Mobile typecheck/lint/doctor/export | Lulus (termasuk perubahan absensi, lokasi, dan izin; 9 unit test) |
 | `npm audit` produksi — server | **0 kerentanan** |
 | `npm audit` produksi — admin | **0 kerentanan** |
-| `npm audit` produksi — root (Expo) | 12 moderate, 0 high/critical |
+| `npm audit` produksi — root (Expo) | 3 moderate, 0 high/critical |
 
 ---
 
@@ -30,7 +30,7 @@
 | :--- | :--- | :--- | :--- |
 | `server/` | 9 moderate (semua dari `exceljs` → archiver/glob/minimatch/uuid) | **0** | `exceljs` diganti penulis XLSX minimal berbasis `fflate` |
 | `admin/` | 0 | **0** | — |
-| root (Expo) | 12 moderate | 12 moderate | Sebagian besar toolchain Expo/CLI; perbaikan yang ditawarkan berupa perubahan major/downgrade yang berisiko. Dipantau melalui upgrade SDK. |
+| root (Expo) | 10 moderate (3 produksi) | 10 moderate (3 produksi) | Sebagian besar toolchain Expo/CLI; perbaikan yang ditawarkan berupa perubahan major/downgrade yang berisiko. Dipantau melalui upgrade SDK. |
 
 Tidak ada kerentanan **high** atau **critical** pada ketiga proyek.
 
@@ -42,7 +42,7 @@ Tidak ada kerentanan **high** atau **critical** pada ketiga proyek.
 | :--- | :--- | :--- | :--- |
 | 1 | Body JSON > 1 MB menghasilkan `500` | Kebingungan/indikasi error internal | Error handler memetakan `413` ke `VALIDATION_ERROR` |
 | 2 | Waktu respons login berbeda untuk email tidak dikenal | Enumerasi akun | Bcrypt dummy dijalankan untuk email tidak dikenal |
-| 3 | Rate limit login hanya per email | Rotasi email dapat mengakali limit | Ditambah limit per IP 30/15 menit |
+| 3 | Rate limit login hanya per email | Rotasi email dapat mengakali limit | Ditambah limit per IP (default 120/15 menit, dapat diatur lewat `LOGIN_IP_LIMIT_MAX`) |
 | 4 | `exceljs` membawa 9 advisory moderate | Risiko rantai pasok | Diganti penulis XLSX minimal (`fflate`), nilai inline string/angka, tanpa parser eksternal |
 | 5 | Web Admin belum memiliki CSP | Risiko XSS pada token localStorage | CSP di-inject saat build + snippet header Nginx |
 | 6 | Belum ada artefak deployment/backup | Risiko operasional | `infra/nginx`, `infra/systemd`, skrip backup/restore, CI |
@@ -100,12 +100,12 @@ Tidak ada kerentanan **high** atau **critical** pada ketiga proyek.
 | Backup + uji restore | ❌ belum dieksekusi |
 | Log bebas token/password | ✅ (desain + audit) |
 | Prosedur reset perangkat | ✅ |
-| `npm audit` | ✅ server/admin 0; root 12 moderate |
+| `npm audit` | ✅ server/admin 0; root 3 moderate produksi (10 termasuk devDependencies) |
 | Retensi data disetujui | ❌ OPEN-12 |
 
 ---
 
-## 7. Perbaikan Pasca-Review (2026-11-03)
+## 7. Perbaikan Pasca-Review (2026-11-03 — 2026-11-15)
 
 | Area | Perbaikan |
 | :--- | :--- |
@@ -118,9 +118,12 @@ Tidak ada kerentanan **high** atau **critical** pada ketiga proyek.
 | Rate limit | Batas login/refresh per IP dapat dikonfigurasi untuk lonjakan pergantian shift |
 | CSP | `connect-src` dipersempit menjadi `'self'` |
 | Database | CHECK constraint dan partial unique index untuk satu lokasi/perangkat aktif |
-| Seed | Ditolak pada `NODE_ENV=production` |
+| Seed | Ditolak di luar `NODE_ENV=development` kecuali `ALLOW_DEMO_SEED=true` |
 | Setup | `prisma generate` masuk dokumentasi dan script dev/seed |
 | Rilis | `bundleIdentifier`, `android.package`, dan `eas.json` ditambahkan |
+| Kebijakan web | `ALLOW_WEB_ATTENDANCE=false` kini menolak Clock-In **dan** Clock-Out dari sesi web |
+| Fallback Clock-Out | Hanya menutup record yang `clockInAt`-nya berasal dari kemunculan shift yang sama |
+| Dependensi | Patch SDK 58 diselaraskan; `expo-doctor` 20/20 lulus |
 
 ## 8. Rekomendasi Fase 8
 

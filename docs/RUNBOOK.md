@@ -110,3 +110,28 @@ rebuild admin → rsync. Simpan build admin bertimestamp untuk rollback.
 - [ ] Disk & memori aman.
 - [ ] Pengajuan menunggu ditinjau.
 - [ ] Sertifikat TLS masih valid.
+- [ ] Tidak ada penumpukan status `INCOMPLETE` (lihat §9).
+
+---
+
+## 9. Finalisasi Absensi (`INCOMPLETE`)
+
+API menandai record yang sudah melewati jam selesai shift +
+`CLOCK_OUT_GRACE_MINUTES` (default 240 menit) tetapi belum Clock-Out sebagai
+`INCOMPLETE`:
+
+- sekali saat API mulai berjalan, dan
+- setiap 60 detik selama API hidup.
+
+Job ini berjalan di dalam proses API. Bila API mati lebih lama dari jendela
+tersebut, jalankan manual (idempoten, aman diulang):
+
+```bash
+cd /opt/clockin/server
+npm run attendance:finalize
+# Selesai. N record ditandai INCOMPLETE.
+```
+
+Clock-Out yang masih dalam grace akan mengembalikan status ke `PRESENT`/`LATE`.
+Pantau jumlah “Belum Keluar” di dashboard Admin; angka besar biasanya berarti
+karyawan lupa Clock-Out atau jam shift perlu disesuaikan.
